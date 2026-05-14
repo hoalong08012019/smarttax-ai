@@ -371,6 +371,26 @@ export const EMBEDDED_KNOWLEDGE_SOURCES: EmbeddedSource[] = [
     vectorDimension: 1536,
     sampleEmbeddedText: 'Lược đồ XSD Tờ khai điện tử HTKK: Các thẻ gốc bắt buộc bao gồm <HSoThueDTu> chứa <HSoKhaiThue> và <ChuKySo>. Bên trong <HSoKhaiThue> phải cấu trúc chi tiết <TTinChung> (thông tin định danh NNT, mã số thuế, kỳ khai thuế) và <CTieuTKhai> ánh xạ chính xác các thẻ XML tương ứng với số thứ tự chỉ tiêu mẫu biểu kê khai (ví dụ: <ChiTieu23>, <ChiTieu25>).',
     lastUpdated: '14/05/2026 (Đã Vector Hóa)'
+  },
+  {
+    id: 'src-nd-123',
+    type: 'THONG_TU',
+    title: 'Nghị định 123/2020/NĐ-CP',
+    purpose: 'Quy định tiêu chuẩn hóa đơn, chứng từ hợp lệ.',
+    totalChunks: 1250,
+    vectorDimension: 1536,
+    sampleEmbeddedText: 'Điều 9. Thời điểm lập hóa đơn: 1. Thời điểm lập hóa đơn đối với bán hàng hóa là thời điểm chuyển giao quyền sở hữu hoặc quyền sử dụng hàng hóa cho người mua, không phân biệt đã thu được tiền hay chưa thu được tiền. 2. Thời điểm lập hóa đơn đối với cung cấp dịch vụ là thời điểm hoàn thành việc cung cấp dịch vụ...',
+    lastUpdated: '14/05/2026 (Đã Vector Hóa)'
+  },
+  {
+    id: 'src-nd-44',
+    type: 'LUAT',
+    title: 'Nghị định 44/2023/NĐ-CP & NĐ 15/2022',
+    purpose: 'Chính sách giảm thuế GTGT từ 10% xuống 8%.',
+    totalChunks: 880,
+    vectorDimension: 1536,
+    sampleEmbeddedText: 'Giảm thuế giá trị gia tăng đối với các nhóm hàng hóa, dịch vụ đang áp dụng mức thuế suất 10% xuống còn 8%, trừ nhóm hàng hóa viễn thông, hoạt động tài chính, ngân hàng, chứng khoán, bảo hiểm, kinh doanh bất động sản, kim loại và sản phẩm từ kim loại đúc sẵn, sản phẩm khai khoáng (không kể khai thác than), than cốc, dầu mỏ tinh chế, sản phẩm hoá chất...',
+    lastUpdated: '14/05/2026 (Đã Vector Hóa)'
   }
 ];
 
@@ -483,5 +503,151 @@ export const MOCK_HTKK_XML_TEMPLATES: Record<string, string> = {
       <TongThueTNCNKhauTru>18500000</TongThueTNCNKhauTru>
     </CTieuTKhai>
   </HSoKhaiThue>
+</HSoThueDTu>`,
+  '01/CNKD': `<?xml version="1.0" encoding="UTF-8"?>
+<HSoThueDTu xmlns="http://www.gdt.gov.vn/2026/HTKK">
+  <HSoKhaiThue>
+    <TTinChung>
+      <TTinTKhai>
+        <MaTKhai>01_CNKD</MaTKhai>
+        <TenTKhai>Tờ khai thuế đối với cá nhân kinh doanh (Hộ kinh doanh TT88)</TenTKhai>
+        <KyKKhai>
+          <Quy>2</Quy>
+          <Nam>2026</Nam>
+        </KyKKhai>
+        <MaSoThue>8392019283-001</MaSoThue>
+        <TenNNT>Hộ kinh doanh TM&amp;DV Thực phẩm An Khang</TenNNT>
+      </TTinTKhai>
+    </TTinChung>
+    <CTieuTKhai>
+      <DoanhThuTinhThueGTGT>18500000</DoanhThuTinhThueGTGT>
+      <TyLeGTGT>1.5%</TyLeGTGT>
+      <ThueGTGTPhaiNop>277500</ThueGTGTPhaiNop>
+      <DoanhThuTinhThueTNCN>18500000</DoanhThuTinhThueTNCN>
+      <TyLeTNCN>0.5%</TyLeTNCN>
+      <ThueTNCNPhaiNop>92500</ThueTNCNPhaiNop>
+      <TongThuePhaiNop>370000</TongThuePhaiNop>
+    </CTieuTKhai>
+  </HSoKhaiThue>
+</HSoThueDTu>`,
+  '03/TNDN': `<?xml version="1.0" encoding="UTF-8"?>
+<HSoThueDTu xmlns="http://www.gdt.gov.vn/2026/HTKK">
+  <HSoKhaiThue>
+    <TTinChung>
+      <TTinTKhai>
+        <MaTKhai>03_TNDN</MaTKhai>
+        <TenTKhai>Tờ khai quyết toán thuế thu nhập doanh nghiệp (Mẫu 03/TNDN)</TenTKhai>
+        <KyKKhai>
+          <Nam>2026</Nam>
+        </KyKKhai>
+        <MaSoThue>0109876543</MaSoThue>
+      </TTinTKhai>
+    </TTinChung>
+    <CTieuTKhai>
+      <ChiTieuA1>1250000000</ChiTieuA1> <!-- Tổng lợi nhuận kế toán trước thuế -->
+      <ChiTieuB4>35000000</ChiTieuB4> <!-- Các khoản chi không được trừ (B4) -->
+      <ChiTieuC1>1285000000</ChiTieuC1> <!-- Thu nhập chịu thuế -->
+      <ChiTieuE1>257000000</ChiTieuE1> <!-- Thuế TNDN phải nộp (Thuế suất 20%) -->
+    </CTieuTKhai>
+  </HSoKhaiThue>
+</HSoThueDTu>`,
+  '04/GTGT': `<?xml version="1.0" encoding="UTF-8"?>
+<HSoThueDTu xmlns="http://www.gdt.gov.vn/2026/HTKK">
+  <HSoKhaiThue>
+    <TTinChung>
+      <TTinTKhai>
+        <MaTKhai>04_GTGT</MaTKhai>
+        <TenTKhai>Tờ khai thuế GTGT trực tiếp trên doanh thu (Mẫu 04/GTGT)</TenTKhai>
+        <KyKKhai>
+          <Thang>04</Thang>
+          <Nam>2026</Nam>
+        </KyKKhai>
+        <MaSoThue>0109876543</MaSoThue>
+      </TTinTKhai>
+    </TTinChung>
+    <CTieuTKhai>
+      <DoanhThuHHDV>150000000</DoanhThuHHDV>
+      <TyLeTinhThue>5%</TyLeTinhThue>
+      <ThueGTGTPhaiNop>7500000</ThueGTGTPhaiNop>
+    </CTieuTKhai>
+  </HSoKhaiThue>
 </HSoThueDTu>`
 };
+
+export interface Circular88BookRecord {
+  id: string;
+  bookCode: 'S1' | 'S2' | 'S3' | 'S4';
+  bookTitle: string;
+  entryDate: string;
+  voucherRef: string;
+  description: string;
+  amount: number;
+  note?: string;
+}
+
+export const MOCK_CIRCULAR_88_BOOKS: Circular88BookRecord[] = [
+  // Sổ S1: Sổ chi tiết doanh thu
+  {
+    id: 's1-1',
+    bookCode: 'S1',
+    bookTitle: 'Sổ chi tiết doanh thu bán hàng hóa, dịch vụ',
+    entryDate: '14/05/2026',
+    voucherRef: 'HD-00042',
+    description: 'Doanh thu phân phối hàng tiêu dùng cho khách vãng lai',
+    amount: 18500000,
+    note: 'Thuế suất GTGT 1.5%, TNCN 0.5%'
+  },
+  {
+    id: 's1-2',
+    bookCode: 'S1',
+    bookTitle: 'Sổ chi tiết doanh thu bán hàng hóa, dịch vụ',
+    entryDate: '12/05/2026',
+    voucherRef: 'HD-00041',
+    description: 'Cung cấp suất ăn công nghiệp / hợp đồng dịch vụ',
+    amount: 32000000,
+    note: 'Thuế suất GTGT 3%, TNCN 1.5%'
+  },
+  // Sổ S2: Sổ chi tiết vật liệu, dụng cụ, hàng hóa
+  {
+    id: 's2-1',
+    bookCode: 'S2',
+    bookTitle: 'Sổ chi tiết vật liệu, dụng cụ, sản phẩm, hàng hóa',
+    entryDate: '11/05/2026',
+    voucherRef: 'PN-0312',
+    description: 'Nhập kho lô hàng thực phẩm đóng hộp (Hóa đơn đầu vào hợp lệ NĐ 123)',
+    amount: 25000000,
+    note: 'SL: 500 thùng, Đơn giá: 50,000'
+  },
+  // Sổ S3: Sổ chi phí sản xuất, kinh doanh
+  {
+    id: 's3-1',
+    bookCode: 'S3',
+    bookTitle: 'Sổ chi phí sản xuất, kinh doanh',
+    entryDate: '10/05/2026',
+    voucherRef: 'PC-0105',
+    description: 'Thanh toán tiền thuê mặt bằng cửa hàng tháng 5/2026',
+    amount: 12000000,
+    note: 'Đã thanh toán qua ngân hàng (Matching OK)'
+  },
+  {
+    id: 's3-2',
+    bookCode: 'S3',
+    bookTitle: 'Sổ chi phí sản xuất, kinh doanh',
+    entryDate: '08/05/2026',
+    voucherRef: 'PC-0102',
+    description: 'Chi phí nhân công thuê ngoài / bốc vác lô hàng',
+    amount: 3500000,
+    note: 'Có phiếu chi và CMND đính kèm'
+  },
+  // Sổ S4: Sổ theo dõi thực hiện nghĩa vụ thuế với NSNN
+  {
+    id: 's4-1',
+    bookCode: 'S4',
+    bookTitle: 'Sổ theo dõi tình hình thực hiện nghĩa vụ thuế với NSNN',
+    entryDate: '05/05/2026',
+    voucherRef: 'GNT-009',
+    description: 'Nộp tiền thuế khoán quý 1/2026 vào Kho bạc Nhà nước',
+    amount: 9200000,
+    note: 'Mã chương 757, Tiểu mục 1701 (GTGT) & 1001 (TNCN)'
+  }
+];
