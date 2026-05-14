@@ -19,7 +19,8 @@ import {
   Layers,
   BookOpen,
   ArrowRight,
-  Send
+  Send,
+  Settings
 } from 'lucide-react';
 import { 
   MOCK_TENANTS, 
@@ -67,6 +68,11 @@ export default function App() {
   // Reporting Form Selector
   const [selectedDeclarationForm, setSelectedDeclarationForm] = useState<string>('01/GTGT');
   const [selectedCircular88Book, setSelectedCircular88Book] = useState<'S1' | 'S2' | 'S3' | 'S4'>('S1');
+
+  // Admin CMS custom states
+  const [adminIndexingTitle, setAdminIndexingTitle] = useState<string>('');
+  const [adminIndexingStatus, setAdminIndexingStatus] = useState<string | null>(null);
+  const [adminSystemPromptOverride, setAdminSystemPromptOverride] = useState<string>('Bắt buộc áp dụng trích xuất RAG chặt chẽ theo Thông tư 80/133/88.');
 
   // Automated Tax Report Builder States
   const [reportPeriodType, setReportPeriodType] = useState<'MONTH' | 'QUARTER' | 'YEAR'>('MONTH');
@@ -534,6 +540,20 @@ export default function App() {
             </div>
             <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: activeTab === 'advisor' ? 'rgba(0,0,0,0.1)' : 'rgba(157,0,255,0.15)', color: activeTab === 'advisor' ? '#000000' : '#d4a6ff' }}>
               pgvector
+            </span>
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('admin')}
+            className={`sidebar-btn ${activeTab === 'admin' ? 'active' : ''}`}
+            style={{ borderLeft: activeTab === 'admin' ? '3px solid var(--accent-lime)' : 'none' }}
+          >
+            <div className="sidebar-btn-left">
+              <Settings size={16} color={activeTab === 'admin' ? '#000000' : 'var(--accent-lime)'} />
+              <span style={{ fontWeight: activeTab === 'admin' ? 800 : 600 }}>Admin CMS Panel</span>
+            </div>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: activeTab === 'admin' ? 'rgba(0,0,0,0.1)' : 'rgba(204,255,0,0.1)', color: activeTab === 'admin' ? '#000000' : 'var(--accent-lime)' }}>
+              Quản trị
             </span>
           </button>
 
@@ -1829,6 +1849,140 @@ CREATE TABLE journal_entries (
                   <span style={{ color: 'var(--accent-lime)' }}>Bản quyền Deepmind</span>
                 </div>
 
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 8: ADMIN CMS MANAGEMENT PANEL */}
+          {activeTab === 'admin' && (
+            <div className="animate-fade-in content-area">
+              
+              {/* Premium Dashboard Controls Banner */}
+              <div className="glass-panel glow-border" style={{ padding: '24px', marginBottom: '24px' }}>
+                <div className="flex-row-between" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
+                  <div className="flex-row-center" style={{ gap: '12px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(204,255,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Settings size={20} color="var(--accent-lime)" />
+                    </div>
+                    <div>
+                      <div className="panel-title" style={{ fontSize: '18px' }}>Hệ thống Quản trị Nội dung & Cấu hình AI (Admin CMS)</div>
+                      <p className="panel-subtitle" style={{ marginTop: '2px' }}>Quản lý dữ liệu lõi, tham số máy học và tinh chỉnh tham số kết xuất trực tiếp trên giao diện.</p>
+                    </div>
+                  </div>
+                  <span className="badge badge-lime font-mono" style={{ fontSize: '11px' }}>🔑 ROOT ADMIN ROLE</span>
+                </div>
+
+                {/* Quick Switch Bento Stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                  <div style={{ padding: '12px', backgroundColor: '#000000', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Trạng thái Database</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-emerald)' }}>Supabase v2 (Connected)</span>
+                  </div>
+                  <div style={{ padding: '12px', backgroundColor: '#000000', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Mã hóa Thông tin</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-cyan)' }} className="font-mono">AES-256-GCM Secure</span>
+                  </div>
+                  <div style={{ padding: '12px', backgroundColor: '#000000', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Chữ ký số Serverless</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>PKCS#11 VNPT Bridge</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2-Column Split: Ingest Simulator & Tenants Override */}
+              <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth > 992 ? '1fr 1fr' : '1fr', gap: '24px', marginBottom: '24px' }}>
+                
+                {/* INGEST SIMULATOR FORM */}
+                <div style={{ backgroundColor: 'var(--surface-card-elevated)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                  <div className="flex-row-center" style={{ gap: '8px', marginBottom: '12px' }}>
+                    <UploadCloud size={16} color="var(--accent-cyan)" />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>Nạp & Nội suy Nguồn Pháp lý RAG (Ingest Engine)</span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                    Mô phỏng cơ chế băm văn bản thành các vector 1536 chiều và tải thẳng vào bảng <strong>knowledge_chunks</strong> của hệ thống pgvector.
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Tên văn bản / Mã tra cứu mới:</label>
+                      <input 
+                        type="text"
+                        value={adminIndexingTitle}
+                        onChange={(e) => setAdminIndexingTitle(e.target.value)}
+                        placeholder="Ví dụ: Thông tư 40/2021/TT-BTC hoặc Nghị định mới..."
+                        style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', backgroundColor: '#000000', border: '1px solid var(--border-color)', color: '#ffffff', fontSize: '12px', outline: 'none' }}
+                      />
+                    </div>
+
+                    <button 
+                      onClick={() => {
+                        if (!adminIndexingTitle.trim()) return;
+                        setAdminIndexingStatus('INDEXING');
+                        setTimeout(() => {
+                          setAdminIndexingStatus('SUCCESS');
+                        }, 1200);
+                      }}
+                      className="btn-primary"
+                      style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
+                    >
+                      <Sparkles size={14} className={adminIndexingStatus === 'INDEXING' ? 'animate-spin' : ''} />
+                      <span>{adminIndexingStatus === 'INDEXING' ? 'Đang nhúng Vector Embedding (1536 dims)...' : '⚡ Nạp Chunk vào pgvector Engine'}</span>
+                    </button>
+
+                    {adminIndexingStatus === 'SUCCESS' && (
+                      <div className="animate-fade-in" style={{ padding: '10px', backgroundColor: 'rgba(0,255,128,0.08)', borderRadius: '4px', border: '1px solid rgba(0,255,128,0.2)', fontSize: '11px', color: 'var(--accent-emerald)' }}>
+                        ✔ <strong>Thành công:</strong> Đã phân tách {adminIndexingTitle} thành <strong>420 chunks</strong> độc lập và cập nhật bộ đệm tra cứu ngữ nghĩa thành công!
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* TENANTS & REGIME PARAMETERS OVERRIDE */}
+                <div style={{ backgroundColor: 'var(--surface-card-elevated)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                  <div className="flex-row-center" style={{ gap: '8px', marginBottom: '12px' }}>
+                    <Building2 size={16} color="var(--accent-lime)" />
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>Quản lý Danh mục Đơn vị Hạch toán (Tenants Info)</span>
+                  </div>
+                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                    Danh sách các tổ chức đang được quản lý bởi tài khoản Đại lý thuế chuyên gia. Hoán đổi nhanh thiết lập để đối soát bộ máy tự động.
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {MOCK_TENANTS.map(t => (
+                      <div key={t.id} className="flex-row-between" style={{ padding: '8px 12px', backgroundColor: '#000000', borderRadius: '4px', border: t.id === activeTenantId ? '1px solid var(--accent-lime)' : '1px solid rgba(255,255,255,0.03)' }}>
+                        <div>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', display: 'block' }}>{t.companyName}</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-muted)' }} className="font-mono">MST: {t.taxCode}</span>
+                        </div>
+                        <span className={`badge ${t.accountingRegime === 'TT133' ? 'badge-lime' : 'badge-amber'}`} style={{ fontSize: '9px' }}>
+                          {t.accountingRegime}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* CORE SYSTEM PROMPTS & DEFAULT SCHEMAS OVERRIDE */}
+              <div style={{ backgroundColor: 'var(--surface-card-elevated)', padding: '20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                <div className="flex-row-between" style={{ marginBottom: '12px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Cpu size={16} color="#d4a6ff" />
+                    <span>Cấu hình Lõi Prompt Điều hướng AI (System Instructions)</span>
+                  </span>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Tham số ngầm định</span>
+                </div>
+
+                <textarea
+                  value={adminSystemPromptOverride}
+                  onChange={(e) => setAdminSystemPromptOverride(e.target.value)}
+                  style={{ width: '100%', height: '60px', padding: '10px', backgroundColor: '#000000', color: 'var(--accent-lime)', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '12px', fontFamily: 'monospace', resize: 'vertical', outline: 'none' }}
+                />
+                <span style={{ fontSize: '10px', color: 'var(--text-secondary)', display: 'block', marginTop: '6px', fontStyle: 'italic' }}>
+                  💡 Gợi ý: Thay đổi tham số này sẽ chi phối luồng suy luận tự động xuất dữ liệu vào Mẫu 01/GTGT, 03/TNDN hoặc Sổ sách kế toán Hộ kinh doanh.
+                </span>
               </div>
 
             </div>
