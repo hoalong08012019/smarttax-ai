@@ -17,7 +17,9 @@ import {
   Sparkles,
   FileCode,
   Layers,
-  BookOpen
+  BookOpen,
+  ArrowRight,
+  Send
 } from 'lucide-react';
 import { 
   MOCK_TENANTS, 
@@ -37,7 +39,7 @@ export default function App() {
   // Multi-tenant active state
   const [activeTenantId, setActiveTenantId] = useState<string>('t-001');
   // Navigation active tab
-  const [activeTab, setActiveTab] = useState<string>('advisor'); // Default to advisor tab to instantly show Embedded state
+  const [activeTab, setActiveTab] = useState<string>('overview');
   
   // Active tenant helper
   const tenant = useMemo(() => {
@@ -232,7 +234,7 @@ export default function App() {
       if (matchedQA) {
         setChatHistory(prev => [...prev, {
           sender: 'AI',
-          text: `🔍 **Hệ thống RAG đã trích xuất từ Kho dữ liệu nạp (Embedding Vector)**:\n\n${matchedQA.shortAnswer}\n\n${matchedQA.fullAnalysis}`,
+          text: `🔍 **Hệ thống RAG đã trích xuất từ Kho dữ liệu nạp (Embedding pgvector)**:\n\n${matchedQA.shortAnswer}\n\n${matchedQA.fullAnalysis}`,
           citation: matchedQA.legalCitation
         }]);
       } else {
@@ -280,73 +282,73 @@ export default function App() {
   }, [selectedEmbeddedSourceId]);
 
   return (
-    <div className="min-h-screen flex flex-col pb-16">
+    <div className="app-container">
       
-      {/* HEADER BANNER */}
-      <header className="glass-panel border-b border-l-0 border-r-0 border-t-0 px-6 py-4 sticky top-0 z-50 flex flex-wrap items-center justify-between gap-4">
+      {/* MONERA FINANCE INSPIRED PREMIUM HEADER */}
+      <header className="premium-header">
         
         {/* Brand Logo & Name */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <Sparkles className="w-6 h-6 text-white" />
+        <div className="header-brand">
+          <div className="brand-logo">
+            <Sparkles size={20} color="#000000" strokeWidth={2.5} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-lg tracking-tight text-white">SmartTax AI</span>
-              <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold border border-emerald-500/30">🇻🇳 VIETNAM</span>
+            <div className="flex-row-center">
+              <span className="brand-title">SmartTax<span style={{ color: 'var(--accent-lime)' }}>.AI</span></span>
+              <span className="badge badge-lime" style={{ fontSize: '9px' }}>🇻🇳 VN PLATFORM</span>
             </div>
-            <p className="text-xs text-gray-400">Nền tảng Kế toán & Tư vấn Thuế Thông Minh</p>
+            <p className="brand-subtitle">Tài chính & Thuế Tối ưu</p>
           </div>
         </div>
 
         {/* Multi-Tenant Switcher */}
-        <div className="flex items-center gap-3 bg-gray-900/90 px-3 py-2 rounded-xl border border-gray-800">
-          <Building2 className="w-4 h-4 text-emerald-400" />
-          <div className="flex flex-col">
-            <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Đơn vị / Hộ kinh doanh đang chọn</span>
+        <div className="tenant-selector-wrapper">
+          <Building2 size={18} color="var(--accent-lime)" />
+          <div className="tenant-info">
+            <span className="tenant-label">Đơn vị Hạch toán</span>
             <select 
               value={activeTenantId} 
               onChange={(e) => {
                 setActiveTenantId(e.target.value);
-                // Clear simulated upload state when switching tenants
                 setUploadedFileName(null);
                 setOcrParsingStatus('IDLE');
                 setNewOcrResult(null);
               }}
-              className="bg-transparent text-sm font-semibold text-white outline-none cursor-pointer border-none p-0 pr-6"
+              className="tenant-select"
             >
               {MOCK_TENANTS.map(t => (
-                <option key={t.id} value={t.id} className="bg-gray-900 text-white">
-                  {t.companyName} ({t.accountingRegime})
+                <option key={t.id} value={t.id}>
+                  {t.companyName} • [{t.accountingRegime}]
                 </option>
               ))}
             </select>
           </div>
           
-          <div className="ml-2 pl-2 border-l border-gray-800 flex flex-col items-end">
-            <span className="text-[10px] text-gray-500">Mã số thuế</span>
-            <span className="text-xs font-mono font-bold text-amber-400">{tenant.taxCode}</span>
+          <div style={{ borderLeft: '1px solid var(--border-color)', paddingLeft: '12px', marginLeft: '4px' }}>
+            <span className="tenant-label" style={{ display: 'block' }}>Mã số thuế</span>
+            <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: 700 }} className="font-mono">
+              {tenant.taxCode}
+            </span>
           </div>
         </div>
 
         {/* Global Connection Ticker & User Widget */}
-        <div className="flex items-center gap-4">
-          <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-900/50 border border-gray-800/80 text-xs">
+        <div className="header-widgets">
+          <div className="status-pill" style={{ display: window.innerWidth > 768 ? 'flex' : 'none' }}>
             <span className="live-indicator"></span>
-            <span className="text-gray-400">Cổng GDT:</span>
-            <span className="text-emerald-400 font-medium">Đã kết nối</span>
-            <span className="text-gray-600">|</span>
-            <span className="text-gray-400">Chữ ký số:</span>
-            <span className="text-purple-400 font-medium">SmartCA Sẵn sàng</span>
+            <span style={{ color: 'var(--text-muted)' }}>Cổng GDT:</span>
+            <span style={{ color: 'var(--accent-emerald)', fontWeight: 700 }}>Đã đồng bộ</span>
+            <span style={{ color: 'var(--text-muted)' }}>|</span>
+            <span style={{ color: 'var(--accent-lime)', fontWeight: 700 }}>SmartCA Chờ ký</span>
           </div>
 
-          <div className="flex items-center gap-2 pl-2">
-            <div className="w-8 h-8 rounded-full bg-purple-600/30 border border-purple-500/40 flex items-center justify-center font-bold text-purple-300 text-xs">
-              CG
+          <div className="user-profile-badge">
+            <div className="avatar-ring">
+              <div className="avatar-inner">CG</div>
             </div>
-            <div className="hidden md:block text-left">
-              <p className="text-xs font-semibold text-gray-200 leading-none">Chuyên gia Thuế</p>
-              <span className="text-[10px] text-gray-400">Kế toán trưởng AI</span>
+            <div style={{ textAlign: 'left', display: window.innerWidth > 480 ? 'block' : 'none' }}>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', lineHeight: 1.1 }}>Chuyên gia Thuế</p>
+              <span style={{ fontSize: '10px', color: 'var(--accent-emerald)', fontWeight: 600 }}>Kế toán trưởng AI</span>
             </div>
           </div>
         </div>
@@ -354,285 +356,289 @@ export default function App() {
       </header>
 
       {/* QUICK SYSTEM REGIME ACCENT BANNER */}
-      <div className="bg-gradient-to-r from-emerald-950/40 via-purple-950/20 to-gray-950 px-6 py-2 border-b border-gray-800/60 flex flex-wrap items-center justify-between text-xs text-gray-300 gap-2">
-        <div className="flex items-center gap-2">
-          <span className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 font-mono">Quy định áp dụng:</span>
-          <span className="font-semibold text-emerald-400">
+      <div className="regime-banner">
+        <div className="flex-row-center">
+          <span style={{ padding: '2px 6px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.05)', fontSize: '11px' }} className="font-mono">
+            Chế độ:
+          </span>
+          <span style={{ fontWeight: 700, color: '#ffffff' }}>
             {tenant.accountingRegime === 'TT133' 
-              ? 'Thông tư 133/2016/TT-BTC dành cho Doanh nghiệp Nhỏ và Vừa (SMEs)' 
-              : 'Thông tư 88/2021/TT-BTC dành cho Hộ kinh doanh, Cá nhân kinh doanh'}
+              ? 'Thông tư 133/2016/TT-BTC • Dành cho Doanh nghiệp Nhỏ và Vừa (SMEs)' 
+              : 'Thông tư 88/2021/TT-BTC • Dành cho Hộ kinh doanh, Cá nhân kinh doanh'}
           </span>
         </div>
-        <div className="flex items-center gap-4">
-          <span>Người đại diện: <strong className="text-white">{tenant.legalRepresentative}</strong></span>
+        <div className="flex-row-center" style={{ gap: '16px' }}>
+          <span>Đại diện: <strong style={{ color: '#ffffff' }}>{tenant.legalRepresentative}</strong></span>
           <span>•</span>
-          <span>Ngành nghề: <span className="text-gray-400">{tenant.industry}</span></span>
+          <span>Ngành nghề: <span style={{ color: '#ffffff', fontWeight: 500 }}>{tenant.industry}</span></span>
         </div>
       </div>
 
-      {/* BODY CONTENT CONTAINER */}
-      <div className="flex-1 max-w-[1600px] w-full mx-auto px-4 lg:px-6 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* MAIN WORKSPACE WRAPPER */}
+      <div className="main-workspace">
         
-        {/* LEFT NAVIGATION SIDEBAR */}
-        <aside className="lg:col-span-3 flex flex-col gap-2">
-          <div className="glass-panel p-3 flex flex-col gap-1.5 sticky top-24">
-            
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 px-3 pt-2 pb-1">Menu Chức Năng</p>
-            
-            <button 
-              onClick={() => setActiveTab('overview')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeTab === 'overview' ? 'bg-gray-800/90 text-emerald-400 border-l-2 border-emerald-500 font-semibold shadow' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <Cpu className="w-4 h-4" />
-              <span>📊 Dashboard Tổng quan</span>
-            </button>
+        {/* SIDEBAR PANEL */}
+        <aside className="sidebar-panel">
+          
+          <div className="sidebar-title">Bảng điều khiển</div>
+          
+          <button 
+            onClick={() => setActiveTab('overview')}
+            className={`sidebar-btn ${activeTab === 'overview' ? 'active' : ''}`}
+          >
+            <div className="sidebar-btn-left">
+              <Cpu size={16} />
+              <span>Dashboard Tổng quan</span>
+            </div>
+          </button>
 
-            <button 
-              onClick={() => setActiveTab('sync')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeTab === 'sync' ? 'bg-gray-800/90 text-emerald-400 border-l-2 border-emerald-500 font-semibold shadow' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <div className="flex items-center gap-3">
-                <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin text-emerald-400' : ''}`} />
-                <span>🔄 GDT Sync & OCR Hóa đơn</span>
-              </div>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-mono font-bold">Auto</span>
-            </button>
+          <button 
+            onClick={() => setActiveTab('sync')}
+            className={`sidebar-btn ${activeTab === 'sync' ? 'active' : ''}`}
+          >
+            <div className="sidebar-btn-left">
+              <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+              <span>GDT Sync & OCR Hóa đơn</span>
+            </div>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: activeTab === 'sync' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.05)' }}>
+              Auto
+            </span>
+          </button>
 
-            <button 
-              onClick={() => setActiveTab('accounting')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeTab === 'accounting' ? 'bg-gray-800/90 text-emerald-400 border-l-2 border-emerald-500 font-semibold shadow' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>🤖 AI Kế toán & Sổ sách</span>
-            </button>
+          <button 
+            onClick={() => setActiveTab('accounting')}
+            className={`sidebar-btn ${activeTab === 'accounting' ? 'active' : ''}`}
+          >
+            <div className="sidebar-btn-left">
+              <FileSpreadsheet size={16} />
+              <span>AI Kế toán & Sổ sách</span>
+            </div>
+          </button>
 
-            <button 
-              onClick={() => setActiveTab('radar')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeTab === 'radar' ? 'bg-gray-800/90 text-emerald-400 border-l-2 border-emerald-500 font-semibold shadow' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <div className="flex items-center gap-3">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                <span>⚠️ Radar Rủi ro Thuế</span>
-              </div>
-              <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold">3 Cảnh báo</span>
-            </button>
+          <button 
+            onClick={() => setActiveTab('radar')}
+            className={`sidebar-btn ${activeTab === 'radar' ? 'active' : ''}`}
+          >
+            <div className="sidebar-btn-left">
+              <AlertTriangle size={16} color={activeTab === 'radar' ? '#000000' : 'var(--accent-amber)'} />
+              <span>Radar Rủi ro Thuế</span>
+            </div>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: activeTab === 'radar' ? 'rgba(0,0,0,0.1)' : 'rgba(255,170,0,0.1)', color: activeTab === 'radar' ? '#000000' : 'var(--accent-amber)' }}>
+              3 Báo động
+            </span>
+          </button>
 
-            <button 
-              onClick={() => setActiveTab('reporting')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeTab === 'reporting' ? 'bg-gray-800/90 text-emerald-400 border-l-2 border-emerald-500 font-semibold shadow' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <FileText className="w-4 h-4" />
-              <span>📑 Báo cáo & Xuất HTKK</span>
-            </button>
+          <button 
+            onClick={() => setActiveTab('reporting')}
+            className={`sidebar-btn ${activeTab === 'reporting' ? 'active' : ''}`}
+          >
+            <div className="sidebar-btn-left">
+              <FileText size={16} />
+              <span>Báo cáo & Xuất XML</span>
+            </div>
+          </button>
 
-            <button 
-              onClick={() => setActiveTab('advisor')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeTab === 'advisor' ? 'bg-gray-800/90 text-purple-400 border-l-2 border-purple-500 font-semibold shadow' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <div className="flex items-center gap-3">
-                <MessageSquare className="w-4 h-4 text-purple-400" />
-                <span>🧠 AI Tax Advisor (RAG)</span>
-              </div>
-              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded font-mono font-bold">Đã nạp 4 Nguồn</span>
-            </button>
+          <button 
+            onClick={() => setActiveTab('advisor')}
+            className={`sidebar-btn ${activeTab === 'advisor' ? 'active' : ''}`}
+          >
+            <div className="sidebar-btn-left">
+              <MessageSquare size={16} color={activeTab === 'advisor' ? '#000000' : 'var(--accent-purple)'} />
+              <span>AI Tax Advisor (RAG)</span>
+            </div>
+            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: activeTab === 'advisor' ? 'rgba(0,0,0,0.1)' : 'rgba(157,0,255,0.15)', color: activeTab === 'advisor' ? '#000000' : '#d4a6ff' }}>
+              pgvector
+            </span>
+          </button>
 
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 px-3 pt-4 pb-1">Hệ Thống Lõi</p>
-            
-            <button 
-              onClick={() => setActiveTab('structure')}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${activeTab === 'structure' ? 'bg-gray-800/90 text-teal-400 border-l-2 border-teal-500 font-semibold shadow' : 'text-gray-400 hover:text-white hover:bg-gray-900/50'}`}
-            >
-              <Database className="w-4 h-4" />
-              <span>🏛️ Kiến trúc & CS DL</span>
-            </button>
+          <div className="sidebar-title" style={{ marginTop: '12px' }}>Kiến trúc Hệ thống</div>
+          
+          <button 
+            onClick={() => setActiveTab('structure')}
+            className={`sidebar-btn ${activeTab === 'structure' ? 'active' : ''}`}
+          >
+            <div className="sidebar-btn-left">
+              <Database size={16} />
+              <span>Lõi DB & Schema</span>
+            </div>
+          </button>
 
-            {/* Quick status summary */}
-            <div className="mt-4 pt-3 border-t border-gray-800 px-3">
-              <div className="bg-gray-900/60 rounded-lg p-2.5 border border-gray-800/70">
-                <p className="text-[11px] text-gray-400 font-medium">Lần đồng bộ tự động cuối:</p>
-                <p className="text-xs font-mono text-gray-300 font-semibold">{tenant.lastSyncTime}</p>
-                <div className="mt-2 flex items-center justify-between text-[11px]">
-                  <span className="text-gray-500">Mức độ rủi ro:</span>
-                  <span className="text-emerald-400 font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> An toàn
-                  </span>
-                </div>
+          {/* SIDEBAR SUMMARY FOOTER BOX */}
+          <div className="sidebar-summary-box">
+            <div className="summary-card-inner">
+              <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>LẦN ĐỒNG BỘ CUỐI</span>
+              <span style={{ fontSize: '11px', color: '#ffffff', fontWeight: 700, display: 'block', marginTop: '2px' }} className="font-mono">
+                {tenant.lastSyncTime}
+              </span>
+              
+              <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>RLS Policy:</span>
+                <span style={{ color: 'var(--accent-emerald)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <ShieldCheck size={12} /> Đã cô lập
+                </span>
               </div>
             </div>
-
           </div>
+
         </aside>
 
-        {/* RIGHT DYNAMIC TAB CONTENT AREA */}
-        <main className="lg:col-span-9 flex flex-col gap-6">
+        {/* MAIN DYNAMIC CONTENT AREA */}
+        <main className="content-area">
           
           {/* TAB 1: OVERVIEW DASHBOARD */}
           {activeTab === 'overview' && (
-            <div className="animate-fade-in flex flex-col gap-6">
+            <div className="animate-fade-in content-area">
               
               {/* TOP CARDS ROW */}
-              <div className="dashboard-grid">
+              <div className="bento-grid-3">
                 
-                <div className="glass-panel p-5 relative overflow-hidden glow-border">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <ArrowUpRight className="w-20 h-20 text-emerald-400" />
+                <div className="glass-panel stat-card glow-border">
+                  <div className="stat-backdrop-icon">
+                    <ArrowUpRight color="var(--accent-lime)" />
                   </div>
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Tổng Doanh thu (Năm 2026)</span>
-                  <p className="text-2xl font-bold text-white mt-2 font-mono tracking-tight">{formatCurrency(tenant.totalRevenue)}</p>
+                  <div>
+                    <span className="stat-label">Tổng Doanh thu (Năm 2026)</span>
+                    <div className="stat-value">{formatCurrency(tenant.totalRevenue)}</div>
+                  </div>
                   
-                  <div className="mt-4 pt-3 border-t border-gray-800/80 flex items-center justify-between text-xs">
-                    <span className="text-gray-400">Xuất hóa đơn điện tử:</span>
-                    <span className="text-emerald-400 font-semibold">100% qua GDT</span>
+                  <div className="stat-footer">
+                    <span style={{ color: 'var(--text-secondary)' }}>Hóa đơn điện tử:</span>
+                    <span style={{ color: 'var(--accent-lime)', fontWeight: 700 }}>100% GDT Verified</span>
                   </div>
                 </div>
 
-                <div className="glass-panel p-5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <ArrowDownLeft className="w-20 h-20 text-rose-400" />
+                <div className="glass-panel stat-card">
+                  <div className="stat-backdrop-icon">
+                    <ArrowDownLeft color="var(--accent-rose)" />
                   </div>
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Tổng Chi phí hợp lệ được trừ</span>
-                  <p className="text-2xl font-bold text-white mt-2 font-mono tracking-tight">{formatCurrency(tenant.totalExpenses)}</p>
+                  <div>
+                    <span className="stat-label">Tổng Chi phí hợp lệ được trừ</span>
+                    <div className="stat-value">{formatCurrency(tenant.totalExpenses)}</div>
+                  </div>
                   
-                  <div className="mt-4 pt-3 border-t border-gray-800/80 flex items-center justify-between text-xs">
-                    <span className="text-gray-400">Tỷ lệ Lợi nhuận gộp ước tính:</span>
-                    <span className="text-cyan-400 font-semibold">
+                  <div className="stat-footer">
+                    <span style={{ color: 'var(--text-secondary)' }}>Tỷ suất Lợi nhuận gộp ước tính:</span>
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>
                       {((tenant.totalRevenue - tenant.totalExpenses) / tenant.totalRevenue * 100).toFixed(1)}%
                     </span>
                   </div>
                 </div>
 
-                <div className="glass-panel p-5 relative overflow-hidden bg-gradient-to-br from-gray-900 via-gray-900 to-emerald-950/20">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">Nghĩa vụ Thuế phát sinh (Ước tính)</span>
+                <div className="glass-panel stat-card" style={{ background: 'linear-gradient(to bottom right, var(--surface-card), rgba(204,255,0,0.03))' }}>
+                  <span className="stat-label">Nghĩa vụ Thuế phát sinh</span>
                   
-                  <div className="mt-3 space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400 text-xs">Thuế GTGT phải nộp:</span>
-                      <span className="font-mono font-bold text-amber-400">{formatCurrency(tenant.taxLiabilities.vat)}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '12px 0' }}>
+                    <div className="flex-row-between">
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Thuế GTGT phải nộp:</span>
+                      <span style={{ fontWeight: 700, color: 'var(--accent-amber)' }} className="font-mono">{formatCurrency(tenant.taxLiabilities.vat)}</span>
                     </div>
                     
                     {tenant.accountingRegime === 'TT133' ? (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400 text-xs">Thuế TNDN tạm tính (20%):</span>
-                        <span className="font-mono font-bold text-rose-400">{formatCurrency(tenant.taxLiabilities.cit)}</span>
+                      <div className="flex-row-between">
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Thuế TNDN tạm tính (20%):</span>
+                        <span style={{ fontWeight: 700, color: 'var(--accent-rose)' }} className="font-mono">{formatCurrency(tenant.taxLiabilities.cit)}</span>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-400 text-xs">Thuế suất khoán Hộ KD:</span>
-                        <span className="font-bold text-purple-400 text-xs">Không áp dụng TNDN</span>
+                      <div className="flex-row-between">
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Thuế suất khoán Hộ KD:</span>
+                        <span style={{ fontWeight: 700, color: 'var(--accent-purple)', fontSize: '11px' }}>Không áp dụng TNDN</span>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-400 text-xs">Thuế TNCN khấu trừ / khoán:</span>
-                      <span className="font-mono font-bold text-cyan-400">{formatCurrency(tenant.taxLiabilities.pit)}</span>
+                    <div className="flex-row-between">
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Thuế TNCN khấu trừ:</span>
+                      <span style={{ fontWeight: 700, color: 'var(--accent-cyan)' }} className="font-mono">{formatCurrency(tenant.taxLiabilities.pit)}</span>
                     </div>
                   </div>
                   
-                  <div className="mt-2 text-[10px] text-gray-500 text-right">
-                    Tự động tổng hợp dựa trên hóa đơn đầu vào/đầu ra
+                  <div className="stat-footer" style={{ fontSize: '10px', color: 'var(--text-muted)', justifyContent: 'flex-end' }}>
+                    Tự động tổng hợp dữ liệu hóa đơn Đầu vào/Đầu ra
                   </div>
                 </div>
 
               </div>
 
-              {/* DYNAMIC VISUAL GRAPH SIMULATOR */}
-              <div className="glass-panel p-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              {/* DYNAMIC CHART SIMULATION CARD */}
+              <div className="glass-panel" style={{ padding: '24px' }}>
+                <div className="panel-header-row">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <span>Biểu đồ Tổng hợp Doanh thu vs Chi phí (Năm 2026)</span>
-                      <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-400 font-normal">Đơn vị: Triệu VND</span>
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <div className="panel-title">
+                      <span>Biểu đồ Tăng trưởng Doanh thu vs Chi phí (2026)</span>
+                      <span className="badge badge-lime" style={{ fontSize: '10px', fontWeight: 600 }}>Đơn vị: Triệu VND</span>
+                    </div>
+                    <p className="panel-subtitle">
                       {tenant.accountingRegime === 'TT133' 
                         ? 'Dữ liệu hạch toán kép phát sinh theo thời gian thực từ phần mềm SmartTax AI' 
                         : 'Sổ chi tiết doanh thu và chi phí sản xuất kinh doanh theo Thông tư 88'}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-4 text-xs">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded bg-emerald-500 inline-block"></span>
-                      <span className="text-gray-300 font-medium">Doanh thu bán hàng</span>
+                  <div className="flex-row-center" style={{ gap: '16px', fontSize: '12px', fontWeight: 600 }}>
+                    <div className="flex-row-center">
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--accent-lime)' }}></span>
+                      <span>Doanh thu bán hàng</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-3 h-3 rounded bg-rose-500 inline-block"></span>
-                      <span className="text-gray-300 font-medium">Chi phí sản xuất / kinh doanh</span>
+                    <div className="flex-row-center">
+                      <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: 'var(--accent-rose)' }}></span>
+                      <span>Chi phí kinh doanh</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Simulated CSS Chart */}
-                <div className="h-64 w-full flex items-end justify-between gap-2 pt-8 pb-2 px-2 border-b border-gray-800 relative">
+                {/* Simulated Visual Multi-bar Layout Array */}
+                <div style={{ height: '260px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '8px', padding: '20px 0 10px', borderBottom: '1px solid var(--border-color)', position: 'relative', marginTop: '16px' }}>
                   
-                  {/* Grid background markers */}
-                  <div className="absolute inset-x-0 top-6 border-b border-gray-800/30 text-[10px] text-gray-600 flex justify-end pr-2">200 Tr</div>
-                  <div className="absolute inset-x-0 top-24 border-b border-gray-800/30 text-[10px] text-gray-600 flex justify-end pr-2">120 Tr</div>
-                  <div className="absolute inset-x-0 top-42 border-b border-gray-800/30 text-[10px] text-gray-600 flex justify-end pr-2">60 Tr</div>
-                  
+                  {/* Backdrop guidelines */}
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '30px', borderBottom: '1px dashed rgba(255,255,255,0.05)', fontSize: '10px', color: 'var(--text-muted)', textAlign: 'right' }} className="font-mono">200 Tr</div>
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '110px', borderBottom: '1px dashed rgba(255,255,255,0.05)', fontSize: '10px', color: 'var(--text-muted)', textAlign: 'right' }} className="font-mono">120 Tr</div>
+                  <div style={{ position: 'absolute', left: 0, right: 0, top: '190px', borderBottom: '1px dashed rgba(255,255,255,0.05)', fontSize: '10px', color: 'var(--text-muted)', textAlign: 'right' }} className="font-mono">60 Tr</div>
+
                   {['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'].map((m, idx) => {
                     const rev = tenant.monthlyRevenue[idx] || 0;
                     const exp = tenant.monthlyExpenses[idx] || 0;
                     
-                    // calculate relative heights mapping max 200m to 100%
                     const revHeight = Math.min(100, (rev / 200) * 100);
                     const expHeight = Math.min(100, (exp / 200) * 100);
 
                     return (
-                      <div key={m} className="flex-1 flex flex-col items-center h-full justify-end z-10 group">
-                        
-                        {/* Tooltip on hover */}
-                        <div className="absolute top-0 hidden group-hover:flex flex-col bg-gray-900 border border-gray-700 p-2 rounded shadow-xl text-[10px] z-30 pointer-events-none">
-                          <strong className="text-white border-b border-gray-800 pb-1 mb-1">{m}/2026</strong>
-                          <span className="text-emerald-400">Doanh thu: {rev} triệu</span>
-                          <span className="text-rose-400">Chi phí: {exp} triệu</span>
-                        </div>
-
-                        <div className="w-full max-w-[32px] flex items-end gap-1 h-full justify-center">
-                          {/* Revenue Bar */}
+                      <div key={m} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', justifyContent: 'flex-end', zIndex: 10 }}>
+                        <div style={{ width: '100%', maxWidth: '36px', display: 'flex', alignItems: 'flex-end', gap: '2px', height: '100%', justifyContent: 'center' }}>
                           <div 
-                            style={{ height: `${revHeight}%` }} 
-                            className="w-full bg-gradient-to-t from-emerald-700 to-emerald-400 rounded-t transition-all group-hover:brightness-125"
+                            style={{ height: `${revHeight}%`, width: '100%', backgroundColor: 'var(--accent-lime)', borderRadius: '4px 4px 0 0', opacity: 0.85 }} 
                           ></div>
-                          {/* Expense Bar */}
                           <div 
-                            style={{ height: `${expHeight}%` }} 
-                            className="w-full bg-gradient-to-t from-rose-800 to-rose-500 rounded-t transition-all group-hover:brightness-125"
+                            style={{ height: `${expHeight}%`, width: '100%', backgroundColor: 'var(--accent-rose)', borderRadius: '4px 4px 0 0', opacity: 0.85 }} 
                           ></div>
                         </div>
-
-                        <span className="text-xs text-gray-400 mt-2 font-medium">{m}</span>
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', fontWeight: 700 }}>{m}</span>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="mt-4 pt-2 flex flex-wrap items-center justify-between text-xs text-gray-400">
-                  <div className="flex items-center gap-1.5 text-emerald-400">
-                    <Sparkles className="w-4 h-4" />
-                    <span>Trí tuệ nhân tạo dự báo xu hướng: Tăng trưởng doanh thu duy trì mức ổn định 12% so với cùng kỳ quý trước.</span>
+                <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', fontSize: '13px' }}>
+                  <div className="flex-row-center" style={{ color: 'var(--accent-lime)', fontWeight: 700 }}>
+                    <Sparkles size={16} />
+                    <span>AI dự báo: Doanh thu duy trì đà tăng trưởng 12% so với cùng kỳ quý trước.</span>
                   </div>
                   <button 
                     onClick={() => setActiveTab('reporting')}
-                    className="text-emerald-400 hover:underline font-semibold flex items-center gap-1"
+                    style={{ background: 'transparent', border: 'none', color: '#ffffff', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                   >
-                    Xem báo cáo thuế chi tiết &rarr;
+                    <span>Xem báo cáo chi tiết</span>
+                    <ArrowRight size={14} />
                   </button>
                 </div>
               </div>
 
-              {/* BOTTOM SECTION: RECENT INTEGRATED INVOICES PREVIEW */}
-              <div className="glass-panel p-6">
-                <div className="flex items-center justify-between mb-4">
+              {/* RECENT INVOICES LIST TABLE PREVIEW */}
+              <div className="glass-panel" style={{ padding: '24px' }}>
+                <div className="panel-header-row">
                   <div>
-                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Hóa đơn điện tử gần đây (Tra cứu GDT)</h4>
-                    <p className="text-xs text-gray-400">Tự động bắt dữ liệu từ hệ thống e-invoice và hạch toán vào sổ</p>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Hóa đơn điện tử phát sinh gần đây</span>
+                    <h4 style={{ fontSize: '14px', color: '#ffffff', fontWeight: 700, marginTop: '2px' }}>Tự động bắt dữ liệu từ cổng GDT và hạch toán vào sổ</h4>
                   </div>
-
-                  <button 
-                    onClick={() => setActiveTab('sync')} 
-                    className="btn-secondary text-xs py-1.5 px-3"
-                  >
+                  <button onClick={() => setActiveTab('sync')} className="btn-secondary">
                     Quản lý Đồng bộ OCR
                   </button>
                 </div>
@@ -654,23 +660,23 @@ export default function App() {
                       {currentInvoices.slice(0, 4).map(inv => (
                         <tr key={inv.id}>
                           <td>
-                            <div className="font-mono font-bold text-white">{inv.symbol}</div>
-                            <div className="text-xs text-gray-400 font-mono">#{inv.number}</div>
+                            <div style={{ fontWeight: 700, color: '#ffffff' }} className="font-mono">{inv.symbol}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }} className="font-mono">#{inv.number}</div>
                           </td>
-                          <td className="text-gray-300 font-mono">{inv.issueDate}</td>
+                          <td style={{ color: '#ffffff' }} className="font-mono">{inv.issueDate}</td>
                           <td>
-                            <div className="font-medium text-gray-200 line-clamp-1">{inv.counterpartName}</div>
-                            <div className="text-[11px] text-gray-500 font-mono">MST: {inv.counterpartTaxCode}</div>
+                            <div style={{ fontWeight: 700, color: '#ffffff' }}>{inv.counterpartName}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }} className="font-mono">MST: {inv.counterpartTaxCode}</div>
                           </td>
                           <td>
                             <span className={`badge ${inv.type === 'INCOMING' ? 'badge-warning' : 'badge-success'}`}>
                               {inv.type === 'INCOMING' ? '📉 Mua vào' : '📈 Bán ra'}
                             </span>
                           </td>
-                          <td className="font-mono font-bold text-white">{formatCurrency(inv.totalAmount)}</td>
-                          <td><span className="text-gray-300 font-mono font-medium">{inv.vatRate}</span></td>
+                          <td style={{ fontWeight: 700, color: '#ffffff' }} className="font-mono">{formatCurrency(inv.totalAmount)}</td>
+                          <td><span style={{ color: '#ffffff', fontWeight: 700 }} className="font-mono">{inv.vatRate}</span></td>
                           <td>
-                            <div className="text-xs font-mono text-purple-300 bg-purple-950/40 px-2 py-1 rounded border border-purple-900 inline-block">
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#d4a6ff', backgroundColor: 'rgba(157,0,255,0.1)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(157,0,255,0.2)' }} className="font-mono">
                               Nợ: {inv.suggestedDebitAcc} / Có: {inv.suggestedCreditAcc}
                             </div>
                           </td>
@@ -687,105 +693,102 @@ export default function App() {
 
           {/* TAB 2: DATA INTEGRATION & OCR SYNC */}
           {activeTab === 'sync' && (
-            <div className="animate-fade-in flex flex-col gap-6">
+            <div className="animate-fade-in content-area">
               
-              <div className="glass-panel p-6 border-l-4 border-emerald-500">
-                <h3 className="text-lg font-bold text-white mb-1">Cổng Kết nối Dữ liệu Tự động (GDT Portals)</h3>
-                <p className="text-xs text-gray-400">
+              <div className="glass-panel glow-border" style={{ padding: '24px' }}>
+                <div className="panel-title" style={{ marginBottom: '4px' }}>Cổng Kết nối Dữ liệu Tự động (GDT Portals)</div>
+                <p className="panel-subtitle">
                   Tự động tra cứu, tải về hóa đơn điện tử mua vào/bán ra từ hệ thống của Tổng cục Thuế theo cơ chế xác thực Token/Chữ ký số doanh nghiệp.
                 </p>
 
-                <div className="mt-6 p-4 rounded-xl bg-gray-900/90 border border-gray-800 flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <div style={{ marginTop: '24px', padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                  <div className="flex-row-center" style={{ gap: '14px' }}>
+                    <div style={{ padding: '12px', borderRadius: '12px', backgroundColor: 'rgba(204,255,0,0.1)', color: 'var(--accent-lime)', border: '1px solid rgba(204,255,0,0.2)' }}>
+                      <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
                     </div>
                     <div>
-                      <h5 className="text-sm font-semibold text-white">Trạng thái đồng bộ tự động GDT</h5>
-                      <p className="text-xs text-gray-400">
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }}>Trạng thái đồng bộ tự động GDT</div>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                         Hệ thống định kỳ 15 phút tra cứu 1 lần để tải hóa đơn gốc dạng XML bảo mật về máy chủ.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={handleTriggerGdtSync} 
-                      disabled={isSyncing}
-                      className="btn-primary"
-                    >
-                      <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                      <span>{isSyncing ? 'Đang truy vấn cổng GDT...' : 'Kích hoạt Đồng bộ thủ công ngay'}</span>
-                    </button>
-                  </div>
+                  <button onClick={handleTriggerGdtSync} disabled={isSyncing} className="btn-primary">
+                    <RefreshCw size={16} className={isSyncing ? 'animate-spin' : ''} />
+                    <span>{isSyncing ? 'Đang truy vấn cổng GDT...' : 'Kích hoạt Đồng bộ thủ công ngay'}</span>
+                  </button>
                 </div>
 
-                {/* SYNC REAL-TIME LOG */}
-                <div className="mt-4 p-3 rounded-lg bg-black/60 border border-gray-800 font-mono text-xs max-h-40 overflow-y-auto space-y-1.5">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest border-b border-gray-800 pb-1 font-sans font-bold">Log Giao Tiếp API Tổng cục Thuế</p>
-                  {syncLog.map((log, index) => (
-                    <div key={index} className="text-emerald-400 leading-relaxed">
-                      {log}
-                    </div>
-                  ))}
-                  {isSyncing && (
-                    <div className="text-amber-400 animate-pulse">
-                      &gt; Đang bóc tách mã bảo mật XML & xác thực con dấu điện tử...
-                    </div>
-                  )}
+                {/* API Real-Time Log */}
+                <div style={{ marginTop: '16px', padding: '16px', backgroundColor: '#000000', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', maxHeight: '160px', overflowY: 'auto' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px', marginBottom: '8px' }}>Log Giao Tiếp API Tổng cục Thuế</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }} className="font-mono">
+                    {syncLog.map((log, index) => (
+                      <div key={index} style={{ color: 'var(--accent-emerald)' }}>{log}</div>
+                    ))}
+                    {isSyncing && (
+                      <div style={{ color: 'var(--accent-lime)', fontWeight: 700, animation: 'pulse 2s infinite' }}>
+                        &gt; Đang bóc tách mã bảo mật XML & xác thực con dấu điện tử...
+                      </div>
+                    )}
+                  </div>
                 </div>
 
               </div>
 
-              {/* OCR MODULE BLOCK */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* OCR MODULE DUAL BENTO BLOCK */}
+              <div className="bento-grid-2">
                 
-                {/* UPLOADER SIMULATOR */}
-                <div className="glass-panel p-6 flex flex-col justify-between">
+                <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <UploadCloud className="w-5 h-5 text-purple-400" />
-                      <h4 className="text-base font-bold text-white">AI OCR & Parsing Engine</h4>
+                    <div className="flex-row-center" style={{ marginBottom: '8px' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(157,0,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <UploadCloud size={16} color="#d4a6ff" />
+                      </div>
+                      <div className="panel-title" style={{ fontSize: '16px' }}>AI OCR & Parsing Engine</div>
                     </div>
-                    <p className="text-xs text-gray-400 mb-4">
+                    <p className="panel-subtitle" style={{ marginBottom: '16px' }}>
                       Kéo thả file hóa đơn điện tử định dạng XML hoặc PDF độc lập để Trí tuệ nhân tạo bóc tách doanh thu/chi phí ngay lập tức.
                     </p>
 
                     {/* DUMMY FILE DROP ZONE */}
-                    <div className="border-2 border-dashed border-gray-700 hover:border-purple-500 rounded-xl p-8 text-center bg-gray-900/40 transition-colors cursor-pointer relative group">
-                      <UploadCloud className="w-10 h-10 text-gray-500 mx-auto mb-3 group-hover:text-purple-400 transition-colors" />
-                      <p className="text-sm font-semibold text-gray-300">Kéo thả file XML/PDF hóa đơn vào đây</p>
-                      <p className="text-xs text-gray-500 mt-1">Hỗ trợ định dạng hóa đơn chuẩn Thông tư 78</p>
+                    <div style={{ border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 'var(--radius-md)', padding: '28px', textAlign: 'center', backgroundColor: 'rgba(255,255,255,0.02)', cursor: 'pointer' }}>
+                      <UploadCloud size={36} color="var(--text-muted)" style={{ margin: '0 auto 12px' }} />
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>Kéo thả file XML/PDF hóa đơn vào đây</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Hỗ trợ định dạng hóa đơn chuẩn Thông tư 78</div>
                       
-                      <div className="mt-4 pt-3 border-t border-gray-800 flex flex-wrap justify-center gap-2">
-                        <span className="text-[11px] text-gray-400 block w-full">Hoặc bấm thử nghiệm mô phỏng upload file mẫu:</span>
+                      <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Mô phỏng upload file mẫu:</span>
                         
-                        <button 
-                          onClick={() => handleSimulateFileUpload('hoadon_muavao_server_aws.xml', 'INCOMING', 18000000)}
-                          className="text-xs bg-gray-800 hover:bg-gray-700 text-purple-300 px-2.5 py-1.5 rounded border border-gray-700 transition-all font-mono"
-                        >
-                          📄 hoadon_muavao_aws.xml
-                        </button>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+                          <button 
+                            onClick={() => handleSimulateFileUpload('hoadon_muavao_server_aws.xml', 'INCOMING', 18000000)}
+                            style={{ backgroundColor: '#000000', color: '#d4a6ff', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }} className="font-mono"
+                          >
+                            📄 hoadon_muavao_aws.xml
+                          </button>
 
-                        <button 
-                          onClick={() => handleSimulateFileUpload('hoadon_banra_phanmem.pdf', 'OUTGOING', 40000000)}
-                          className="text-xs bg-gray-800 hover:bg-gray-700 text-emerald-300 px-2.5 py-1.5 rounded border border-gray-700 transition-all font-mono"
-                        >
-                          📄 hoadon_banra_pm.pdf
-                        </button>
+                          <button 
+                            onClick={() => handleSimulateFileUpload('hoadon_banra_phanmem.pdf', 'OUTGOING', 40000000)}
+                            style={{ backgroundColor: '#000000', color: 'var(--accent-emerald)', border: '1px solid var(--border-color)', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }} className="font-mono"
+                          >
+                            📄 hoadon_banra_pm.pdf
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {uploadedFileName && (
-                    <div className="mt-4 p-3 rounded-lg bg-purple-950/30 border border-purple-800 flex items-center justify-between text-xs animate-fade-in">
-                      <div className="flex items-center gap-2">
-                        <FileCode className="w-4 h-4 text-purple-400" />
-                        <span className="text-white font-mono font-medium">{uploadedFileName}</span>
+                    <div style={{ marginTop: '16px', padding: '12px', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(157,0,255,0.1)', border: '1px solid rgba(157,0,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }} className="animate-fade-in">
+                      <div className="flex-row-center">
+                        <FileCode size={16} color="#d4a6ff" />
+                        <span style={{ color: '#ffffff', fontWeight: 700 }} className="font-mono">{uploadedFileName}</span>
                       </div>
                       
                       {ocrParsingStatus === 'PARSING' ? (
-                        <span className="text-amber-400 animate-pulse font-medium">Đang trích xuất AI...</span>
+                        <span style={{ color: 'var(--accent-lime)', fontWeight: 700 }}>Đang trích xuất AI...</span>
                       ) : (
                         <span className="badge badge-ai">✔ Phân tích 99.2%</span>
                       )}
@@ -795,67 +798,67 @@ export default function App() {
                 </div>
 
                 {/* PARSING LIVE RESULT PREVIEW */}
-                <div className="glass-panel p-6">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Kết quả Tự động hạch toán AI</h4>
+                <div className="glass-panel" style={{ padding: '24px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>Kết quả Tự động hạch toán AI</div>
                   
                   {newOcrResult ? (
-                    <div className="animate-fade-in space-y-4">
+                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       
-                      <div className="p-3 bg-gray-900 rounded-lg border border-gray-800 space-y-2">
-                        <div className="flex items-center justify-between border-b border-gray-800 pb-2">
-                          <span className="text-xs text-gray-400">Tên Đối tác / NCC:</span>
-                          <span className="text-xs font-bold text-white text-right">{newOcrResult.counterpartName}</span>
+                      <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div className="flex-row-between" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Tên Đối tác / NCC:</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', textAlign: 'right' }}>{newOcrResult.counterpartName}</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Số hóa đơn / Ký hiệu:</span>
-                          <span className="font-mono text-emerald-400 font-semibold">{newOcrResult.symbol} - #{newOcrResult.number}</span>
+                        <div className="flex-row-between">
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Số hóa đơn / Ký hiệu:</span>
+                          <span style={{ color: 'var(--accent-lime)', fontWeight: 700, fontSize: '12px' }} className="font-mono">{newOcrResult.symbol} - #{newOcrResult.number}</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Số tiền trước thuế:</span>
-                          <span className="font-mono text-white">{formatCurrency(newOcrResult.preTaxAmount || 0)}</span>
+                        <div className="flex-row-between">
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Số tiền trước thuế:</span>
+                          <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '12px' }} className="font-mono">{formatCurrency(newOcrResult.preTaxAmount || 0)}</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Thuế suất GTGT:</span>
-                          <span className="font-mono text-amber-400 font-bold">{newOcrResult.vatRate}</span>
+                        <div className="flex-row-between">
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Thuế suất GTGT:</span>
+                          <span style={{ color: 'var(--accent-amber)', fontWeight: 700, fontSize: '12px' }} className="font-mono">{newOcrResult.vatRate}</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Tổng thanh toán:</span>
-                          <span className="font-mono font-bold text-emerald-400 text-sm">{formatCurrency(newOcrResult.totalAmount || 0)}</span>
+                        <div className="flex-row-between" style={{ paddingTop: '6px', borderTop: '1px solid var(--border-color)' }}>
+                          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Tổng thanh toán:</span>
+                          <span style={{ color: 'var(--accent-lime)', fontWeight: 800, fontSize: '14px' }} className="font-mono">{formatCurrency(newOcrResult.totalAmount || 0)}</span>
                         </div>
                       </div>
 
-                      <div className="p-4 rounded-lg bg-gradient-to-r from-purple-950/50 to-gray-900 border border-purple-900/60">
-                        <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300 mb-2">
-                          <Sparkles className="w-4 h-4" />
+                      <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(157,0,255,0.05)', border: '1px solid rgba(157,0,255,0.2)' }}>
+                        <div className="flex-row-center" style={{ fontSize: '12px', fontWeight: 700, color: '#d4a6ff', marginBottom: '10px' }}>
+                          <Sparkles size={14} />
                           <span>Gợi ý Hạch toán theo {tenant.accountingRegime === 'TT133' ? 'Thông tư 133' : 'Thông tư 88'}</span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                          <div className="bg-black/40 p-2 rounded border border-gray-800">
-                            <span className="text-[10px] text-gray-500 block">TÀI KHOẢN NỢ</span>
-                            <strong className="text-emerald-400 text-sm">{newOcrResult.suggestedDebitAcc}</strong>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                          <div style={{ backgroundColor: '#000000', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '2px' }}>TÀI KHOẢN NỢ</span>
+                            <strong style={{ color: 'var(--accent-lime)', fontSize: '12px' }} className="font-mono">{newOcrResult.suggestedDebitAcc}</strong>
                           </div>
-                          <div className="bg-black/40 p-2 rounded border border-gray-800">
-                            <span className="text-[10px] text-gray-500 block">TÀI KHOẢN CÓ</span>
-                            <strong className="text-rose-400 text-sm">{newOcrResult.suggestedCreditAcc}</strong>
+                          <div style={{ backgroundColor: '#000000', padding: '10px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                            <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '2px' }}>TÀI KHOẢN CÓ</span>
+                            <strong style={{ color: 'var(--accent-rose)', fontSize: '12px' }} className="font-mono">{newOcrResult.suggestedCreditAcc}</strong>
                           </div>
                         </div>
 
-                        <p className="text-[11px] text-gray-400 mt-2">
+                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '10px', lineHeight: 1.4 }}>
                           Hệ thống đã tự động ghi nhận vào Sổ Nhật Ký chung và Sổ chi tiết thuế GTGT. Không cần nhập liệu tay!
                         </p>
                       </div>
 
                     </div>
                   ) : (
-                    <div className="h-full min-h-[220px] flex flex-col items-center justify-center text-center text-gray-500">
-                      <FileCode className="w-12 h-12 stroke-1 text-gray-700 mb-2" />
-                      <p className="text-xs font-medium">Chưa có file hóa đơn nào được bóc tách gần đây.</p>
-                      <p className="text-[11px] text-gray-600 mt-1">Hãy upload file hoặc bấm nút mô phỏng ở ô bên trái để kiểm tra AI.</p>
+                    <div style={{ height: '100%', minHeight: '220px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <FileCode size={36} color="rgba(255,255,255,0.1)" style={{ marginBottom: '8px' }} />
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>Chưa có file hóa đơn nào được bóc tách gần đây.</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Hãy upload file hoặc bấm nút mô phỏng ở ô bên trái để kiểm tra AI.</div>
                     </div>
                   )}
 
@@ -864,8 +867,8 @@ export default function App() {
               </div>
 
               {/* LIST OF CURRENT LOCAL INVOICES */}
-              <div className="glass-panel p-6">
-                <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-4">Danh sách toàn bộ Hóa đơn hiện có ({currentInvoices.length})</h4>
+              <div className="glass-panel" style={{ padding: '24px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Danh sách toàn bộ Hóa đơn hiện có ({currentInvoices.length})</div>
                 
                 <div className="table-container">
                   <table className="table-premium">
@@ -885,24 +888,24 @@ export default function App() {
                       {currentInvoices.map(inv => (
                         <tr key={inv.id}>
                           <td>
-                            <div className="font-mono font-bold text-white">{inv.symbol}</div>
-                            <div className="text-xs text-gray-400 font-mono">#{inv.number}</div>
+                            <div style={{ fontWeight: 700, color: '#ffffff' }} className="font-mono">{inv.symbol}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }} className="font-mono">#{inv.number}</div>
                           </td>
-                          <td className="text-gray-300 font-mono">{inv.issueDate}</td>
+                          <td style={{ color: '#ffffff' }} className="font-mono">{inv.issueDate}</td>
                           <td>
-                            <div className="font-medium text-gray-200">{inv.counterpartName}</div>
-                            <div className="text-[10px] text-gray-500 font-mono">MST: {inv.counterpartTaxCode}</div>
+                            <div style={{ fontWeight: 700, color: '#ffffff' }}>{inv.counterpartName}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }} className="font-mono">MST: {inv.counterpartTaxCode}</div>
                           </td>
                           <td>
                             <span className={`badge ${inv.type === 'INCOMING' ? 'badge-warning' : 'badge-success'}`}>
                               {inv.type === 'INCOMING' ? '📉 Mua vào' : '📈 Bán ra'}
                             </span>
                           </td>
-                          <td className="font-mono text-gray-300">{formatCurrency(inv.preTaxAmount)}</td>
-                          <td><span className="text-amber-400 font-mono font-bold">{inv.vatRate}</span></td>
-                          <td className="font-mono font-bold text-emerald-400">{formatCurrency(inv.totalAmount)}</td>
+                          <td style={{ color: '#ffffff', fontWeight: 700 }} className="font-mono">{formatCurrency(inv.preTaxAmount)}</td>
+                          <td><span style={{ color: 'var(--accent-amber)', fontWeight: 700 }} className="font-mono">{inv.vatRate}</span></td>
+                          <td style={{ color: 'var(--accent-emerald)', fontWeight: 700 }} className="font-mono">{formatCurrency(inv.totalAmount)}</td>
                           <td>
-                            <div className="text-xs font-mono text-purple-300 bg-purple-950/40 px-2 py-0.5 rounded border border-purple-900 inline-block">
+                            <div style={{ fontSize: '12px', fontWeight: 700, color: '#d4a6ff', backgroundColor: 'rgba(157,0,255,0.1)', padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(157,0,255,0.2)' }} className="font-mono">
                               {inv.suggestedDebitAcc} / {inv.suggestedCreditAcc}
                             </div>
                           </td>
@@ -919,31 +922,31 @@ export default function App() {
 
           {/* TAB 3: AI ACCOUNTING ENGINE & BOOKKEEPING LEDGERS */}
           {activeTab === 'accounting' && (
-            <div className="animate-fade-in flex flex-col gap-6">
+            <div className="animate-fade-in content-area">
               
-              <div className="glass-panel p-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div className="glass-panel" style={{ padding: '24px' }}>
+                <div className="panel-header-row">
                   <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <div className="panel-title">
                       <span>Sổ Kế toán Hạch toán Kép Tự động</span>
-                      <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-mono font-semibold">
+                      <span className="badge badge-lime font-mono" style={{ fontSize: '11px' }}>
                         {tenant.accountingRegime === 'TT133' ? 'Chế độ Thông tư 133' : 'Chế độ Thông tư 88'}
                       </span>
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-1">
+                    </div>
+                    <p className="panel-subtitle">
                       Mỗi khi hóa đơn phát sinh, AI Engine tự động định khoản tài khoản kế toán cấp 1 & cấp 2 phù hợp với ngành nghề kinh doanh.
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">Chế độ hiển thị:</span>
-                    <span className="px-2 py-1 rounded bg-gray-800 text-xs font-semibold text-white">Sổ Nhật Ký Chung</span>
+                  <div className="flex-row-center">
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>Hiển thị:</span>
+                    <span style={{ padding: '6px 12px', borderRadius: '6px', backgroundColor: 'rgba(255,255,255,0.05)', fontSize: '12px', fontWeight: 700, color: '#ffffff', border: '1px solid var(--border-color)' }}>Sổ Nhật Ký Chung</span>
                   </div>
                 </div>
 
-                {/* INFO EXPLANATION FOR CIRCULARS */}
-                <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 mb-6 text-xs text-gray-300 leading-relaxed">
-                  <strong className="text-emerald-400 block mb-1">💡 Cơ sở Pháp lý hạch toán:</strong>
+                {/* INFO EXPLANATION BOX */}
+                <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '24px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  <strong style={{ color: 'var(--accent-lime)', display: 'block', marginBottom: '4px', fontWeight: 700 }}>💡 Cơ sở Pháp lý hạch toán:</strong>
                   {tenant.accountingRegime === 'TT133' ? (
                     <span>
                       Áp dụng Hệ thống Tài khoản Kế toán theo <strong>Thông tư 133/2016/TT-BTC</strong>. Tài sản và chi phí tuân thủ hạch toán chi tiết: 
@@ -974,22 +977,22 @@ export default function App() {
                     <tbody>
                       {currentJournals.map(je => (
                         <tr key={je.id}>
-                          <td className="text-gray-300 font-mono">{je.date}</td>
+                          <td style={{ color: '#ffffff' }} className="font-mono">{je.date}</td>
                           <td>
-                            <span className="font-mono font-bold text-white bg-gray-900 px-2 py-1 rounded border border-gray-800">
+                            <span style={{ fontWeight: 700, color: '#ffffff', backgroundColor: '#000000', padding: '4px 8px', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '12px' }} className="font-mono">
                               {je.voucherCode}
                             </span>
                           </td>
                           <td>
-                            <div className="text-gray-200 font-medium">{je.description}</div>
+                            <div style={{ color: '#ffffff', fontWeight: 700 }}>{je.description}</div>
                           </td>
                           <td>
-                            <div className="space-y-1 text-xs font-mono">
-                              <div className="text-emerald-400 font-semibold">Nợ: {je.debitAccount}</div>
-                              <div className="text-rose-400 font-semibold">Có: {je.creditAccount}</div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', fontWeight: 700 }} className="font-mono">
+                              <div style={{ color: 'var(--accent-lime)' }}>Nợ: {je.debitAccount}</div>
+                              <div style={{ color: 'var(--accent-rose)' }}>Có: {je.creditAccount}</div>
                             </div>
                           </td>
-                          <td className="font-mono font-bold text-white text-sm">{formatCurrency(je.amount)}</td>
+                          <td style={{ color: '#ffffff', fontWeight: 800, fontSize: '14px' }} className="font-mono">{formatCurrency(je.amount)}</td>
                           <td>
                             {je.isAutomated ? (
                               <span className="badge badge-ai">✔ Tự động hạch toán</span>
@@ -1010,27 +1013,27 @@ export default function App() {
 
           {/* TAB 4: TAX RISK RADAR */}
           {activeTab === 'radar' && (
-            <div className="animate-fade-in flex flex-col gap-6">
+            <div className="animate-fade-in content-area">
               
-              <div className="glass-panel p-6">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+              <div className="glass-panel" style={{ padding: '24px' }}>
+                <div className="panel-header-row">
                   <div>
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <div className="panel-title">
                       <span>Hệ thống Radar Rủi ro Thuế (Tax Risk Radar)</span>
                       <span className="badge badge-warning">Cảnh báo Trực tuyến</span>
-                    </h3>
-                    <p className="text-xs text-gray-400 mt-1">
+                    </div>
+                    <p className="panel-subtitle">
                       Tự động quét toàn bộ hóa đơn đầu vào/đầu ra, đối chiếu chéo danh sách đen doanh nghiệp bỏ trốn của TCT và các mẫu hình xuất hóa đơn bất thường.
                     </p>
                   </div>
 
                   {/* FILTER BUTTONS */}
-                  <div className="flex items-center gap-2 bg-gray-900 p-1 rounded-lg border border-gray-800">
+                  <div className="flex-row-center" style={{ backgroundColor: 'var(--surface-card-elevated)', padding: '4px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
                     {(['ALL', 'CRITICAL', 'WARNING', 'INFO'] as const).map(lvl => (
                       <button
                         key={lvl}
                         onClick={() => setRiskFilter(lvl)}
-                        className={`px-3 py-1.5 rounded text-xs font-semibold transition-all ${riskFilter === lvl ? 'bg-gray-800 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}
+                        style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', background: riskFilter === lvl ? 'rgba(255,255,255,0.1)' : 'transparent', color: riskFilter === lvl ? '#ffffff' : 'var(--text-muted)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
                       >
                         {lvl === 'ALL' ? 'Tất cả' : lvl}
                       </button>
@@ -1039,50 +1042,56 @@ export default function App() {
                 </div>
 
                 {/* SENSITIVITY INDICATOR */}
-                <div className="bg-gray-900/60 p-4 rounded-xl border border-gray-800 mb-6 flex flex-wrap items-center justify-between gap-4 text-xs">
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                  <div className="flex-row-center" style={{ gap: '12px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(255,170,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <AlertTriangle size={16} color="var(--accent-amber)" />
+                    </div>
                     <div>
-                      <span className="text-gray-300 font-medium block">Độ nhạy quét Rủi ro AI Engine</span>
-                      <span className="text-[11px] text-gray-500">Mức hiện tại: Nâng cao (Bao gồm rà soát ngày xuất hóa đơn và tuổi đời NCC)</span>
+                      <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '13px', display: 'block' }}>Độ nhạy quét Rủi ro AI Engine</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Mức hiện tại: Nâng cao (Bao gồm rà soát ngày xuất hóa đơn và tuổi đời NCC)</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500">Ngưỡng:</span>
-                    <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 font-mono font-bold">Cao (High Precision)</span>
+                  <div className="flex-row-center">
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px' }}>Ngưỡng:</span>
+                    <span style={{ padding: '4px 10px', borderRadius: '6px', backgroundColor: 'rgba(255,170,0,0.1)', color: 'var(--accent-amber)', fontSize: '12px', fontWeight: 700 }} className="font-mono">Cao (High Precision)</span>
                   </div>
                 </div>
 
-                {/* ALERTS CARDS LIST */}
-                <div className="space-y-4">
+                {/* ALERTS LIST CARDS */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {filteredAlerts.map(alert => {
                     
-                    let bgBorder = 'border-gray-800';
-                    let textAccent = 'text-gray-400';
+                    let borderColor = 'var(--border-color)';
+                    let bgTint = 'transparent';
+                    let textAccent = 'var(--text-secondary)';
                     if (alert.level === 'CRITICAL') {
-                      bgBorder = 'border-rose-500/50 bg-rose-950/10';
-                      textAccent = 'text-rose-400';
+                      borderColor = 'rgba(255,51,102,0.3)';
+                      bgTint = 'rgba(255,51,102,0.02)';
+                      textAccent = 'var(--accent-rose)';
                     } else if (alert.level === 'WARNING') {
-                      bgBorder = 'border-amber-500/50 bg-amber-950/10';
-                      textAccent = 'text-amber-400';
+                      borderColor = 'rgba(255,170,0,0.3)';
+                      bgTint = 'rgba(255,170,0,0.02)';
+                      textAccent = 'var(--accent-amber)';
                     } else {
-                      bgBorder = 'border-blue-500/50 bg-blue-950/10';
-                      textAccent = 'text-blue-400';
+                      borderColor = 'rgba(0,229,255,0.3)';
+                      bgTint = 'rgba(0,229,255,0.02)';
+                      textAccent = 'var(--accent-cyan)';
                     }
 
                     return (
-                      <div key={alert.id} className={`p-5 rounded-xl border ${bgBorder} transition-all relative overflow-hidden`}>
+                      <div key={alert.id} style={{ padding: '20px', borderRadius: 'var(--radius-md)', border: `1px solid ${borderColor}`, backgroundColor: bgTint, position: 'relative' }}>
                         
-                        <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className={`w-5 h-5 ${textAccent}`} />
-                            <h4 className="text-base font-bold text-white">{alert.title}</h4>
+                        <div className="flex-row-between" style={{ marginBottom: '10px', alignItems: 'flex-start' }}>
+                          <div className="flex-row-center" style={{ gap: '10px' }}>
+                            <AlertTriangle size={18} style={{ color: textAccent, flexShrink: 0 }} />
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }} className="font-mono">{alert.title}</div>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex-row-center">
                             {alert.detectedOnInvoice && (
-                              <span className="text-xs bg-gray-900 px-2 py-1 rounded font-mono text-gray-400 border border-gray-800">
+                              <span style={{ fontSize: '11px', backgroundColor: '#000000', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border-color)', color: '#ffffff', fontWeight: 700 }} className="font-mono">
                                 HĐ: #{alert.detectedOnInvoice}
                               </span>
                             )}
@@ -1092,18 +1101,20 @@ export default function App() {
                           </div>
                         </div>
 
-                        <p className="text-xs text-gray-300 leading-relaxed mb-4">
+                        <p style={{ fontSize: '13px', color: 'var(--text-main)', marginBottom: '16px', lineHeight: 1.4 }}>
                           {alert.description}
                         </p>
 
-                        <div className="mt-3 pt-3 border-t border-gray-800/80 bg-black/30 p-3 rounded-lg">
-                          <strong className="text-[11px] text-emerald-400 uppercase tracking-wider block mb-1">💡 Tư vấn Khắc phục từ Expert Tax Consultant:</strong>
-                          <p className="text-xs text-gray-300 leading-relaxed">
+                        <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)', backgroundColor: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px' }}>
+                          <strong style={{ fontSize: '10px', color: 'var(--accent-lime)', display: 'block', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            💡 Tư vấn Khắc phục từ Chuyên gia Thuế:
+                          </strong>
+                          <p style={{ fontSize: '12px', color: '#ffffff', fontWeight: 600 }}>
                             {alert.recommendation}
                           </p>
                         </div>
 
-                        <div className="mt-2 text-[10px] text-gray-500 font-mono text-right">
+                        <div style={{ marginTop: '10px', fontSize: '10px', color: 'var(--text-muted)', textAlign: 'right', fontWeight: 700 }} className="font-mono">
                           Thời gian phát hiện: {alert.timestamp}
                         </div>
 
@@ -1119,72 +1130,70 @@ export default function App() {
 
           {/* TAB 5: TAX COMPLIANCE & REPORTING (HTKK XML) */}
           {activeTab === 'reporting' && (
-            <div className="animate-fade-in flex flex-col gap-6">
+            <div className="animate-fade-in content-area">
               
-              <div className="glass-panel p-6">
-                <h3 className="text-lg font-bold text-white mb-1">Kết xuất Tờ khai Thuế định dạng XML (Chuẩn HTKK)</h3>
-                <p className="text-xs text-gray-400 mb-6">
+              <div className="glass-panel" style={{ padding: '24px' }}>
+                <div className="panel-title" style={{ marginBottom: '4px' }}>Kết xuất Tờ khai Thuế định dạng XML (Chuẩn HTKK)</div>
+                <p className="panel-subtitle" style={{ marginBottom: '24px' }}>
                   Dữ liệu từ sổ sách kế toán tự động tổng hợp vào tờ khai chuẩn mã vạch HTKK mới nhất. Tương thích nộp thẳng lên hệ thống thuedientu.gdt.gov.vn.
                 </p>
 
-                {/* FORM SELECTOR ROW */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {/* CONFIG ROW */}
+                <div className="bento-grid-3" style={{ marginBottom: '24px' }}>
                   
-                  <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
-                    <span className="text-xs text-gray-500 block mb-1 font-medium">Chọn loại Tờ khai kết xuất</span>
+                  <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Chọn loại Tờ khai kết xuất</span>
                     <select 
                       value={selectedDeclarationForm} 
                       onChange={(e) => setSelectedDeclarationForm(e.target.value)}
-                      className="bg-black text-sm font-bold text-emerald-400 p-2.5 rounded-lg w-full border border-gray-700 outline-none cursor-pointer"
+                      style={{ backgroundColor: '#000000', color: 'var(--accent-lime)', fontSize: '13px', fontWeight: 700, padding: '8px 12px', borderRadius: '6px', width: '100%', border: '1px solid var(--border-color)', outline: 'none', cursor: 'pointer' }}
+                      className="font-mono"
                     >
                       <option value="01/GTGT">Tờ khai 01/GTGT (Thuế GTGT)</option>
                       <option value="05/KK-TNCN">Tờ khai 05/KK-TNCN (Thuế TNCN)</option>
                     </select>
                   </div>
 
-                  <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
-                    <span className="text-xs text-gray-500 block mb-1 font-medium">Kỳ tính thuế áp dụng</span>
-                    <div className="text-sm font-bold text-white pt-1">
+                  <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>Kỳ tính thuế áp dụng</span>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#ffffff' }} className="font-mono">
                       Tháng 04 / 2026
                     </div>
-                    <span className="text-[10px] text-gray-500 block mt-0.5">Hạn nộp: 20/05/2026</span>
+                    <span style={{ fontSize: '10px', color: 'var(--accent-emerald)', fontWeight: 700, display: 'block', marginTop: '2px' }}>Hạn nộp: 20/05/2026</span>
                   </div>
 
-                  <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 flex flex-col justify-center">
-                    <span className="text-xs text-gray-500 block mb-1 font-medium">Chữ ký số tích hợp</span>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-purple-400 inline-block"></span>
-                      <span className="text-xs font-bold text-purple-300">SmartCA VN (Đã ký sẵn sàng)</span>
+                  <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '6px', textTransform: 'uppercase' }}>Chữ ký số tích hợp</span>
+                    <div className="flex-row-center">
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-lime)' }}></span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff' }}>SmartCA VN (Sẵn sàng)</span>
                     </div>
                   </div>
 
                 </div>
 
-                {/* XML DATA PREVIEW BOX */}
-                <div className="relative">
-                  <div className="flex items-center justify-between bg-gray-950 px-4 py-2.5 rounded-t-lg border border-gray-800 border-b-0">
-                    <span className="text-xs font-mono font-bold text-gray-400 flex items-center gap-2">
-                      <FileCode className="w-4 h-4 text-amber-500" />
+                {/* XML RAW DISPLAY */}
+                <div>
+                  <div className="flex-row-between" style={{ backgroundColor: '#000000', padding: '12px 16px', borderRadius: 'var(--radius-md) var(--radius-md) 0 0', border: '1px solid var(--border-color)', borderBottom: 'none' }}>
+                    <span className="flex-row-center" style={{ fontSize: '12px', color: '#ffffff', fontWeight: 700 }} className="font-mono">
+                      <FileCode size={16} color="var(--accent-lime)" />
                       <span>Cấu trúc XML Gốc - Tờ khai {selectedDeclarationForm}</span>
                     </span>
 
-                    <button 
-                      onClick={handleDownloadXml}
-                      className="btn-primary text-xs py-1.5 px-3"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Xuất file XML chuẩn HTKK</span>
+                    <button onClick={handleDownloadXml} className="btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}>
+                      <Download size={14} />
+                      <span>Xuất file XML HTKK</span>
                     </button>
                   </div>
 
-                  <pre className="bg-[#05070d] p-4 rounded-b-lg border border-gray-800 text-xs font-mono text-emerald-400/90 overflow-x-auto max-h-96 leading-relaxed">
+                  <pre style={{ backgroundColor: 'var(--bg-base)', padding: '16px', borderRadius: '0 0 var(--radius-md) var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '12px', color: 'var(--accent-emerald)', overflowX: 'auto', maxHeight: '380px', lineHeight: 1.4 }} className="font-mono">
                     {MOCK_HTKK_XML_TEMPLATES[selectedDeclarationForm] || 'Không tìm thấy mẫu file.'}
                   </pre>
                 </div>
 
-                <div className="mt-4 p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                  <p className="text-xs text-gray-300 leading-relaxed">
+                <div style={{ marginTop: '16px', padding: '16px', borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(204,255,0,0.03)', border: '1px solid rgba(204,255,0,0.2)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <CheckCircle2 size={20} color="var(--accent-lime)" style={{ flexShrink: 0 }} />
+                  <p style={{ fontSize: '12px', color: '#ffffff', fontWeight: 500, lineHeight: 1.4 }}>
                     Tờ khai đã được AI tự động kiểm tra logic tính toán các chỉ tiêu mua vào (Chỉ tiêu [23], [24], [25]) và bán ra (Chỉ tiêu [27], [28]). 
                     Số liệu hoàn toàn khớp với Tổng Sổ Cái hạch toán.
                   </p>
@@ -1197,68 +1206,62 @@ export default function App() {
 
           {/* TAB 6: AI TAX ADVISOR (RAG SYSTEM) WITH EMBEDDING SOURCES PREVIEW */}
           {activeTab === 'advisor' && (
-            <div className="animate-fade-in flex flex-col gap-6">
+            <div className="animate-fade-in content-area">
               
-              {/* TOP EMBEDDING SOURCES STATUS CONTAINER */}
-              <div className="glass-panel p-6 border-t-4 border-purple-500">
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="w-5 h-5 text-purple-400" />
-                      <h3 className="text-base font-bold text-white uppercase tracking-wider">
-                        Nguồn Dữ liệu Đã Nạp (Vector Embeddings RAG)
-                      </h3>
+              {/* VECTOR DB SOURCES BLOCK */}
+              <div className="glass-panel glow-border" style={{ padding: '24px' }}>
+                <div className="panel-header-row">
+                  <div className="flex-row-center">
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(157,0,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <BookOpen size={16} color="#d4a6ff" />
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Trạng thái nhúng (Embedding) trực tiếp vào Vector Store PostgreSQL (pgvector) bằng mô hình Text-Embedding kích thước 1536 chiều.
-                    </p>
+                    <div className="panel-title" style={{ fontSize: '16px' }}>Kho Dữ liệu Đã Nạp (Vector pgvector Store)</div>
                   </div>
 
-                  <span className="badge badge-ai">✔ Tổng: 6,110 Chunks</span>
+                  <span className="badge badge-ai font-mono" style={{ fontSize: '12px' }}>✔ Tổng: 6,110 Chunks</span>
                 </div>
+                <p className="panel-subtitle" style={{ marginBottom: '16px' }}>
+                  Trạng thái nhúng (Embedding) trực tiếp vào Vector Store PostgreSQL (pgvector) bằng mô hình Text-Embedding kích thước 1536 chiều.
+                </p>
 
                 {/* THE 4 EMBEDDED KNOWLEDGE SOURCES CARDS GRID */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="bento-grid-4">
                   {EMBEDDED_KNOWLEDGE_SOURCES.map(source => {
                     const isSelected = source.id === selectedEmbeddedSourceId;
                     
-                    let typeBadgeBg = 'bg-gray-800 text-gray-400';
-                    if (source.type === 'LUAT') typeBadgeBg = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-                    else if (source.type === 'THONG_TU') typeBadgeBg = 'bg-blue-500/20 text-blue-300 border border-blue-500/30';
-                    else if (source.type === 'KE_TOAN') typeBadgeBg = 'bg-purple-500/20 text-purple-300 border border-purple-500/30';
-                    else typeBadgeBg = 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+                    let typeBadgeStyle = { background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: 'none' };
+                    if (source.type === 'LUAT') typeBadgeStyle = { background: 'rgba(204,255,0,0.1)', color: 'var(--accent-lime)', border: '1px solid rgba(204,255,0,0.2)' };
+                    else if (source.type === 'THONG_TU') typeBadgeStyle = { background: 'rgba(0,229,255,0.1)', color: 'var(--accent-cyan)', border: '1px solid rgba(0,229,255,0.2)' };
+                    else if (source.type === 'KE_TOAN') typeBadgeStyle = { background: 'rgba(157,0,255,0.1)', color: '#d4a6ff', border: '1px solid rgba(157,0,255,0.2)' };
+                    else typeBadgeStyle = { background: 'rgba(255,170,0,0.1)', color: 'var(--accent-amber)', border: '1px solid rgba(255,170,0,0.2)' };
 
                     return (
                       <button
                         key={source.id}
                         onClick={() => setSelectedEmbeddedSourceId(source.id)}
-                        className={`p-3 rounded-xl text-left border transition-all flex flex-col justify-between ${
-                          isSelected 
-                            ? 'bg-purple-950/40 border-purple-500 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500' 
-                            : 'bg-gray-900/90 border-gray-800 hover:border-gray-700'
-                        }`}
+                        style={{ padding: '16px', borderRadius: 'var(--radius-md)', textAlign: 'left', background: isSelected ? 'var(--surface-card-elevated)' : '#000000', border: `1px solid ${isSelected ? 'var(--accent-lime)' : 'var(--border-color)'}`, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', cursor: 'pointer', transition: 'all 0.2s' }}
                       >
                         <div>
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold ${typeBadgeBg}`}>
+                          <div className="flex-row-between" style={{ marginBottom: '8px' }}>
+                            <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', fontWeight: 700, ...typeBadgeStyle }} className="font-mono">
                               {source.type}
                             </span>
-                            <span className="text-[10px] text-gray-500 font-mono">
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700 }} className="font-mono">
                               {source.totalChunks} chunks
                             </span>
                           </div>
 
-                          <h5 className="text-xs font-bold text-white line-clamp-1 mb-1">
+                          <div style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff', marginBottom: '4px', lineHeight: 1.2 }} className="font-mono">
                             {source.title}
-                          </h5>
-                          <p className="text-[11px] text-gray-400 line-clamp-2 leading-relaxed">
+                          </div>
+                          <p style={{ fontSize: '11px', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {source.purpose}
                           </p>
                         </div>
 
-                        <div className="mt-3 pt-2 border-t border-gray-800/80 flex items-center justify-between text-[10px] text-purple-400 font-mono">
+                        <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', color: 'var(--accent-lime)', fontWeight: 700 }} className="font-mono">
                           <span>Dim: {source.vectorDimension}</span>
-                          <span className="text-gray-500">{isSelected ? '● Đang xem' : 'Bấm xem →'}</span>
+                          <span style={{ color: isSelected ? 'var(--accent-lime)' : 'var(--text-muted)' }}>{isSelected ? '● Đang xem' : 'Bấm xem →'}</span>
                         </div>
                       </button>
                     );
@@ -1266,107 +1269,96 @@ export default function App() {
                 </div>
 
                 {/* ACTIVE EMBEDDED PREVIEW BOX */}
-                <div className="mt-4 p-3 rounded-lg bg-black/60 border border-purple-900/50">
-                  <div className="flex items-center justify-between border-b border-gray-800 pb-1.5 mb-2 text-xs">
-                    <span className="text-gray-400">
-                      Mô phỏng Vector Text Chunk trích xuất từ: <strong className="text-white font-mono">{activeEmbeddedSource.title}</strong>
+                <div style={{ marginTop: '16px', padding: '16px', borderRadius: 'var(--radius-md)', backgroundColor: '#000000', border: '1px solid var(--border-color)' }}>
+                  <div className="flex-row-between" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px', marginBottom: '10px', fontSize: '12px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>
+                      Vector Text Chunk trích xuất từ: <strong style={{ color: '#ffffff' }} className="font-mono">{activeEmbeddedSource.title}</strong>
                     </span>
-                    <span className="text-[10px] text-emerald-400 font-mono">Trạng thái: {activeEmbeddedSource.lastUpdated}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--accent-lime)', fontWeight: 700 }} className="font-mono">Cập nhật: {activeEmbeddedSource.lastUpdated}</span>
                   </div>
-                  <p className="text-xs font-mono text-purple-300 leading-relaxed italic bg-gray-950 p-2.5 rounded border border-gray-900">
+                  <p style={{ fontSize: '12px', color: 'var(--accent-emerald)', fontWeight: 700, fontStyle: 'italic', backgroundColor: 'var(--bg-base)', padding: '12px', borderRadius: '6px', border: '1px solid var(--border-color)' }} className="font-mono">
                     "{activeEmbeddedSource.sampleEmbeddedText}"
                   </p>
                 </div>
 
               </div>
 
-              {/* RAG ADVISOR PANEL */}
-              <div className="glass-panel p-6">
+              {/* RAG ADVISOR CHAT PANEL */}
+              <div className="glass-panel" style={{ padding: '24px' }}>
                 
-                <div className="border-b border-gray-800 pb-3 mb-4 flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-purple-400" />
-                      <span>Hệ thống Tư vấn tự động (Truy vấn chéo các nguồn trên)</span>
-                    </h3>
+                <div className="panel-header-row" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+                  <div className="flex-row-center">
+                    <MessageSquare size={18} color="var(--accent-lime)" />
+                    <div className="panel-title" style={{ fontSize: '16px' }}>Hệ thống Tư vấn Pháp lý Thuế tự động (AI LLM Agent)</div>
                   </div>
-
-                  <span className="text-xs text-gray-400">Bấm câu hỏi mẫu để đối chiếu độ trích xuất AI:</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Bấm câu hỏi mẫu để đối chiếu RAG:</span>
                 </div>
 
                 {/* SUGGESTED PRE-BAKED QUESTIONS */}
-                <div className="mb-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {MOCK_QA_KNOWLEDGE.map(qa => (
-                      <button
-                        key={qa.id}
-                        onClick={() => {
-                          // append history simulation
-                          setChatHistory(prev => [
-                            ...prev, 
-                            { sender: 'USER', text: qa.question },
-                            { sender: 'AI', text: `${qa.shortAnswer}\n\n${qa.fullAnalysis}`, citation: qa.legalCitation }
-                          ]);
-                        }}
-                        className="p-3 bg-gray-900/80 hover:bg-purple-950/40 border border-gray-800 hover:border-purple-500/50 rounded-xl text-left transition-all group flex flex-col justify-between"
-                      >
-                        <p className="text-xs font-medium text-gray-300 group-hover:text-purple-300 line-clamp-2 leading-relaxed">
-                          "{qa.question}"
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-1 pt-2 border-t border-gray-800 items-center justify-between">
-                          <div className="flex gap-1">
-                            {qa.tags.slice(0, 2).map(t => (
-                              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-400">
-                                #{t}
-                              </span>
-                            ))}
-                          </div>
-                          
-                          {qa.sourceId && (
-                            <span className="text-[9px] text-emerald-400 font-mono font-bold">
-                              Trích xuất RAG
+                <div className="bento-grid-3" style={{ marginBottom: '20px' }}>
+                  {MOCK_QA_KNOWLEDGE.map(qa => (
+                    <button
+                      key={qa.id}
+                      onClick={() => {
+                        setChatHistory(prev => [
+                          ...prev, 
+                          { sender: 'USER', text: qa.question },
+                          { sender: 'AI', text: `${qa.shortAnswer}\n\n${qa.fullAnalysis}`, citation: qa.legalCitation }
+                        ]);
+                      }}
+                      style={{ padding: '14px', backgroundColor: 'var(--surface-card-elevated)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'border-color 0.2s' }}
+                    >
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', marginBottom: '10px', lineHeight: 1.3 }}>
+                        "{qa.question}"
+                      </p>
+                      <div className="flex-row-between" style={{ paddingTop: '8px', borderTop: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {qa.tags.slice(0, 2).map(t => (
+                            <span key={t} style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', backgroundColor: '#000000', color: 'var(--text-muted)', fontWeight: 700 }}>
+                              #{t}
                             </span>
-                          )}
+                          ))}
                         </div>
-                      </button>
-                    ))}
-                  </div>
+                        
+                        {qa.sourceId && (
+                          <span style={{ fontSize: '9px', color: 'var(--accent-lime)', fontWeight: 700 }} className="font-mono">
+                            RAG Verified
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
                 </div>
 
-                {/* CHAT INTERFACE AREA */}
-                <div className="rounded-xl border border-gray-800 bg-black/40 flex flex-col h-[420px]">
+                {/* CHAT INTERFACE STREAM */}
+                <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', height: '420px' }}>
                   
-                  {/* Chat messages stream */}
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                  {/* Messages container */}
+                  <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {chatHistory.map((chat, idx) => (
                       <div 
                         key={idx} 
-                        className={`flex flex-col max-w-[85%] ${chat.sender === 'USER' ? 'ml-auto items-end' : 'mr-auto items-start'}`}
+                        style={{ display: 'flex', flexDirection: 'column', maxWidth: '85%', alignSelf: chat.sender === 'USER' ? 'flex-end' : 'flex-start', alignItems: chat.sender === 'USER' ? 'flex-end' : 'flex-start' }}
                       >
-                        <div className="flex items-center gap-1.5 mb-1 text-[11px] text-gray-500 px-1">
+                        <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px', padding: '0 4px' }} className="font-mono">
                           {chat.sender === 'USER' ? (
-                            <span>Kế toán viên (Bạn)</span>
+                            <span>KẾ TOÁN VIÊN (BẠN)</span>
                           ) : (
-                            <span className="text-purple-400 font-bold flex items-center gap-1">
-                              <Sparkles className="w-3 h-3" /> SmartTax AI Advisor
+                            <span style={{ color: 'var(--accent-lime)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <Sparkles size={10} /> SMARTTAX AI ADVISOR
                             </span>
                           )}
                         </div>
 
                         <div 
-                          className={`p-3.5 rounded-xl text-xs leading-relaxed whitespace-pre-wrap ${
-                            chat.sender === 'USER' 
-                              ? 'bg-emerald-600 text-white rounded-br-none font-medium' 
-                              : 'bg-gray-900 border border-gray-800 text-gray-200 rounded-bl-none'
-                          }`}
+                          style={{ padding: '14px', borderRadius: 'var(--radius-md)', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap', backgroundColor: chat.sender === 'USER' ? 'var(--accent-lime)' : 'var(--surface-card-elevated)', color: chat.sender === 'USER' ? '#000000' : '#ffffff', border: chat.sender === 'USER' ? 'none' : '1px solid var(--border-color)', fontWeight: chat.sender === 'USER' ? 700 : 500, borderBottomRightRadius: chat.sender === 'USER' ? 0 : 'var(--radius-md)', borderBottomLeftRadius: chat.sender === 'USER' ? 'var(--radius-md)' : 0 }}
                         >
                           {chat.text}
                         </div>
 
-                        {/* Citation helper display */}
                         {chat.citation && (
-                          <div className="mt-1.5 p-2 rounded bg-purple-950/30 border border-purple-900 text-[11px] text-purple-300 font-mono w-full text-left">
-                            <strong className="text-purple-400">Nguồn ánh xạ (Legal Citation):</strong> {chat.citation}
+                          <div style={{ marginTop: '6px', padding: '8px 12px', borderRadius: '6px', backgroundColor: 'rgba(157,0,255,0.1)', border: '1px solid rgba(157,0,255,0.2)', fontSize: '11px', color: '#d4a6ff', width: '100%' }} className="font-mono">
+                            <strong style={{ color: '#ffffff' }}>Căn cứ trích dẫn:</strong> {chat.citation}
                           </div>
                         )}
 
@@ -1374,16 +1366,18 @@ export default function App() {
                     ))}
                   </div>
 
-                  {/* CHAT INPUT FORM */}
-                  <form onSubmit={handleSendCustomQuestion} className="p-3 border-t border-gray-800 bg-gray-950 flex gap-2 rounded-b-xl">
+                  {/* Input form */}
+                  <form onSubmit={handleSendCustomQuestion} style={{ padding: '12px', borderTop: '1px solid var(--border-color)', backgroundColor: 'var(--surface-card)', display: 'flex', gap: '8px', borderBottomLeftRadius: 'var(--radius-md)', borderBottomRightRadius: 'var(--radius-md)' }}>
                     <input 
                       type="text" 
                       value={customQuestionInput}
                       onChange={(e) => setCustomQuestionInput(e.target.value)}
                       placeholder="Hỏi AI tư vấn về thời hạn nộp, quy tắc phân bổ, chế độ kế toán Thông tư 133 hay chuẩn cấu trúc file XML..."
-                      className="flex-1 input-premium text-xs"
+                      className="input-premium"
+                      style={{ backgroundColor: '#000000' }}
                     />
-                    <button type="submit" className="btn-ai text-xs py-2 px-4 whitespace-nowrap">
+                    <button type="submit" className="btn-primary" style={{ whiteSpace: 'nowrap' }}>
+                      <Send size={14} />
                       <span>Gửi Câu Hỏi</span>
                     </button>
                   </form>
@@ -1397,60 +1391,60 @@ export default function App() {
 
           {/* TAB 7: PLATFORM STRUCTURE & SCHEMA BLUEPRINT VISUALIZER */}
           {activeTab === 'structure' && (
-            <div className="animate-fade-in flex flex-col gap-6">
+            <div className="animate-fade-in content-area">
               
-              <div className="glass-panel p-6">
-                <div className="border-b border-gray-800 pb-4 mb-4">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Database className="w-5 h-5 text-teal-400" />
+              <div className="glass-panel" style={{ padding: '24px' }}>
+                <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '16px' }}>
+                  <div className="panel-title">
+                    <Database size={20} color="var(--accent-lime)" />
                     <span>Kiến trúc Kỹ thuật & Cấu trúc Nền tảng SmartTax AI</span>
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-1">
+                  </div>
+                  <p className="panel-subtitle">
                     Bản thiết kế kỹ thuật tiêu chuẩn cho hệ thống kế toán đa chi nhánh (Multi-tenant) kết hợp mã hóa bảo mật.
                   </p>
                 </div>
 
                 {/* ARCHITECTURAL VIEW CARDS */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bento-grid-3" style={{ marginBottom: '24px' }}>
                   
-                  <div className="p-4 bg-gray-900 rounded-xl border border-gray-800">
-                    <div className="flex items-center gap-2 text-teal-400 font-bold text-xs mb-1">
-                      <Layers className="w-4 h-4" />
+                  <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                    <div className="flex-row-center" style={{ color: 'var(--accent-lime)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }} className="font-mono">
+                      <Layers size={16} />
                       <span>Database: PostgreSQL</span>
                     </div>
-                    <p className="text-xs text-gray-400 leading-relaxed">
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                       Sử dụng Row-Level Security (RLS) cô lập 100% dữ liệu các công ty theo trường `tenant_id`. Kết hợp `pgvector` để nhúng dữ liệu luật.
                     </p>
                   </div>
 
-                  <div className="p-4 bg-gray-900 rounded-xl border border-gray-800">
-                    <div className="flex items-center gap-2 text-purple-400 font-bold text-xs mb-1">
-                      <ShieldCheck className="w-4 h-4" />
+                  <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                    <div className="flex-row-center" style={{ color: 'var(--accent-cyan)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }} className="font-mono">
+                      <ShieldCheck size={16} />
                       <span>Security & Chữ ký số</span>
                     </div>
-                    <p className="text-xs text-gray-400 leading-relaxed">
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                       Mã hóa cột thông tin tài khoản bằng AES-256-GCM. Hỗ trợ xác thực PKCS#11/SmartCA ký trực tiếp gói XML trước khi nộp GDT.
                     </p>
                   </div>
 
-                  <div className="p-4 bg-gray-900 rounded-xl border border-gray-800">
-                    <div className="flex items-center gap-2 text-amber-400 font-bold text-xs mb-1">
-                      <Cpu className="w-4 h-4" />
+                  <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
+                    <div className="flex-row-center" style={{ color: 'var(--accent-amber)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }} className="font-mono">
+                      <Cpu size={16} />
                       <span>GDT Sync Microservice</span>
                     </div>
-                    <p className="text-xs text-gray-400 leading-relaxed">
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                       Các endpoint REST API kết nối tự động lấy dữ liệu XML/PDF gốc. Parser tự động phân loại Nợ/Có.
                     </p>
                   </div>
 
                 </div>
 
-                {/* VISUAL CODE SCHEMA RENDERER */}
-                <div className="space-y-4">
+                {/* SQL BLOCK */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   
                   <div>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">1. Cấu trúc Bảng Cơ sở dữ liệu Cốt lõi (SQL DDL)</span>
-                    <pre className="bg-[#05070d] p-4 rounded-lg border border-gray-800 text-xs font-mono text-cyan-400 max-h-72 overflow-y-auto leading-relaxed">
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase' }} className="font-mono">1. Cấu trúc Bảng Cơ sở dữ liệu Cốt lõi (SQL DDL)</span>
+                    <pre style={{ backgroundColor: '#000000', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '12px', color: 'var(--accent-cyan)', overflowY: 'auto', maxHeight: '280px', lineHeight: 1.4 }} className="font-mono">
 {`CREATE TABLE tenants (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tax_code VARCHAR(20) UNIQUE NOT NULL,
@@ -1483,22 +1477,22 @@ CREATE TABLE journal_entries (
                   </div>
 
                   <div>
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-2">2. API Endpoints Specification (GDT Integration)</span>
-                    <div className="bg-[#05070d] p-4 rounded-lg border border-gray-800 space-y-3 text-xs font-mono">
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase' }} className="font-mono">2. API Endpoints Specification (GDT Integration)</span>
+                    <div style={{ backgroundColor: '#000000', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '12px' }} className="font-mono">
                       
-                      <div className="border-b border-gray-800 pb-2">
-                        <div className="text-emerald-400 font-bold">POST /api/v1/gdt/authenticate</div>
-                        <p className="text-gray-500 text-[11px] mt-0.5">Xác thực chứng thư số với máy chủ Tổng cục Thuế, lấy phiên làm việc bảo mật.</p>
+                      <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                        <div style={{ color: 'var(--accent-lime)', fontWeight: 700 }}>POST /api/v1/gdt/authenticate</div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>Xác thực chứng thư số với máy chủ Tổng cục Thuế, lấy phiên làm việc bảo mật.</p>
                       </div>
 
-                      <div className="border-b border-gray-800 pb-2">
-                        <div className="text-cyan-400 font-bold">GET /api/v1/gdt/invoices/sync?tax_code=0109876543&type=INCOMING</div>
-                        <p className="text-gray-500 text-[11px] mt-0.5">Tải luồng dữ liệu hóa đơn điện tử mua vào mới phát sinh trong kỳ.</p>
+                      <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                        <div style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>GET /api/v1/gdt/invoices/sync?tax_code=0109876543&type=INCOMING</div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>Tải luồng dữ liệu hóa đơn điện tử mua vào mới phát sinh trong kỳ.</p>
                       </div>
 
                       <div>
-                        <div className="text-purple-400 font-bold">POST /api/v1/declarations/export-htkk</div>
-                        <p className="text-gray-500 text-[11px] mt-0.5">Đóng gói XML chuẩn HTKK đính kèm chữ ký số để truyền trực tiếp hệ thống khai thuế.</p>
+                        <div style={{ color: '#d4a6ff', fontWeight: 700 }}>POST /api/v1/declarations/export-htkk</div>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '2px' }}>Đóng gói XML chuẩn HTKK đính kèm chữ ký số để truyền trực tiếp hệ thống khai thuế.</p>
                       </div>
 
                     </div>
@@ -1506,9 +1500,9 @@ CREATE TABLE journal_entries (
 
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-gray-800 flex justify-between items-center text-xs text-gray-400">
-                  <span>Tài liệu chi tiết đã được xuất ra thư mục Artifact: <strong className="text-white">platform_architecture_and_schema.md</strong></span>
-                  <span className="text-emerald-400 font-semibold">Bản quyền Deepmind / Advanced Agentic Coding</span>
+                <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                  <span>Tài liệu chi tiết lưu tại Artifact: <strong style={{ color: '#ffffff' }}>platform_architecture_and_schema.md</strong></span>
+                  <span style={{ color: 'var(--accent-lime)' }}>Bản quyền Deepmind</span>
                 </div>
 
               </div>
@@ -1521,9 +1515,9 @@ CREATE TABLE journal_entries (
       </div>
 
       {/* FOOTER */}
-      <footer className="mt-auto pt-12 pb-6 text-center text-xs text-gray-600 border-t border-gray-900 max-w-[1600px] w-full mx-auto px-4">
-        <p className="font-semibold text-gray-500">SmartTax AI Platform • Cung cấp giải pháp Kế toán tối ưu cho SMEs & Hộ Kinh Doanh Việt Nam</p>
-        <p className="mt-1">Hỗ trợ đầy đủ tiêu chuẩn HTKK, e-Invoice GDT & Chữ ký số SmartCA bảo mật cao.</p>
+      <footer className="premium-footer">
+        <p style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>SmartTax AI Platform • Cung cấp giải pháp Kế toán tối ưu cho SMEs & Hộ Kinh Doanh Việt Nam</p>
+        <p style={{ marginTop: '4px' }}>Thiết kế hệ thống bento-grid Vanilla CSS chuẩn xác lấy cảm hứng từ Monera Finance Product trên Dribbble.</p>
       </footer>
 
     </div>
