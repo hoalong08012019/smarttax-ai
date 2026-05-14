@@ -1175,7 +1175,7 @@ export default function App() {
                 {/* XML RAW DISPLAY */}
                 <div>
                   <div className="flex-row-between" style={{ backgroundColor: '#000000', padding: '12px 16px', borderRadius: 'var(--radius-md) var(--radius-md) 0 0', border: '1px solid var(--border-color)', borderBottom: 'none' }}>
-                    <span className="flex-row-center" style={{ fontSize: '12px', color: '#ffffff', fontWeight: 700 }} className="font-mono">
+                    <span className="flex-row-center font-mono" style={{ fontSize: '12px', color: '#ffffff', fontWeight: 700 }}>
                       <FileCode size={16} color="var(--accent-lime)" />
                       <span>Cấu trúc XML Gốc - Tờ khai {selectedDeclarationForm}</span>
                     </span>
@@ -1408,7 +1408,7 @@ export default function App() {
                 <div className="bento-grid-3" style={{ marginBottom: '24px' }}>
                   
                   <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                    <div className="flex-row-center" style={{ color: 'var(--accent-lime)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }} className="font-mono">
+                    <div className="flex-row-center font-mono" style={{ color: 'var(--accent-lime)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }}>
                       <Layers size={16} />
                       <span>Database: PostgreSQL</span>
                     </div>
@@ -1418,7 +1418,7 @@ export default function App() {
                   </div>
 
                   <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                    <div className="flex-row-center" style={{ color: 'var(--accent-cyan)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }} className="font-mono">
+                    <div className="flex-row-center font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }}>
                       <ShieldCheck size={16} />
                       <span>Security & Chữ ký số</span>
                     </div>
@@ -1428,7 +1428,7 @@ export default function App() {
                   </div>
 
                   <div style={{ padding: '16px', backgroundColor: 'var(--surface-card-elevated)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }}>
-                    <div className="flex-row-center" style={{ color: 'var(--accent-amber)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }} className="font-mono">
+                    <div className="flex-row-center font-mono" style={{ color: 'var(--accent-amber)', fontWeight: 700, fontSize: '13px', marginBottom: '6px' }}>
                       <Cpu size={16} />
                       <span>GDT Sync Microservice</span>
                     </div>
