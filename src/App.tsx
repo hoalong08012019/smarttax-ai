@@ -393,7 +393,8 @@ export default function App() {
 
             <form onSubmit={(e) => {
               e.preventDefault();
-              if (adminPasscodeInput === 'smarttax2026') {
+              const targetPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'smarttax2026';
+              if (adminPasscodeInput === targetPasscode) {
                 sessionStorage.setItem('smarttax_admin_auth', 'true');
                 setIsAdminAuthenticated(true);
                 setAdminAuthError(null);
