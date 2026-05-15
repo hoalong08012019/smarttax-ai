@@ -182,7 +182,19 @@ export default function App() {
   };
 
   const handleDownloadXml = () => {
-    const xmlContent = MOCK_HTKK_XML_TEMPLATES[selectedDeclarationForm] || '<?xml version="1.0"?><Error>No content</Error>';
+    let xmlContent = MOCK_HTKK_XML_TEMPLATES[selectedDeclarationForm] || '<?xml version="1.0"?><Error>No content</Error>';
+    
+    // Inject dynamic data into XML based on current state
+    if (generatedReportSummary) {
+      xmlContent = xmlContent
+        .replace('<Nam>2026</Nam>', `<Nam>${new Date().getFullYear()}</Nam>`)
+        .replace('<MaSoThue>0109876543</MaSoThue>', `<MaSoThue>${tenant.taxCode}</MaSoThue>`)
+        .replace('<TenNNT>Công ty TNHH Giải Pháp Công Nghệ Viễn Đông</TenNNT>', `<TenNNT>${tenant.companyName}</TenNNT>`)
+        .replace(/<ChiTieu27>.*?<\/ChiTieu27>/, `<ChiTieu27>${generatedReportSummary.totalRevenueBase}</ChiTieu27>`)
+        .replace(/<ChiTieu40>.*?<\/ChiTieu40>/, `<ChiTieu40>${generatedReportSummary.payableVat}</ChiTieu40>`)
+        .replace(/<ThueGTGTPhaiNop>.*?<\/ThueGTGTPhaiNop>/, `<ThueGTGTPhaiNop>${generatedReportSummary.payableVat}</ThueGTGTPhaiNop>`);
+    }
+
     const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

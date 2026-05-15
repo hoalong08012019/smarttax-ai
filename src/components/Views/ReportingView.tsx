@@ -269,6 +269,9 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
                 <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                   {generatedReportSummary.verifiedLog}
                 </p>
+                <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '10px', color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                  🛡️ Tuân thủ: {tenant.accountingRegime === 'TT133' ? 'Thông tư 80/2021/TT-BTC' : 'Thông tư 40/2021/TT-BTC'}
+                </div>
               </div>
             </div>
           ) : (
