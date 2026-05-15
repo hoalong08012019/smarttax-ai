@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { 
   FileText, 
-  Download, 
   FileCode, 
   CheckCircle2, 
-  AlertTriangle,
   Layers,
   Sparkles,
   RefreshCw,
@@ -14,7 +12,7 @@ import {
   Unlock,
   X
 } from 'lucide-react';
-import { Tenant } from '../../mockData';
+import type { Tenant } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
 import { useDigitalSignature } from '../../hooks/useDigitalSignature';
 
@@ -233,6 +231,10 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
                 <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Doanh thu tính thuế</span>
                   <p style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>{formatCurrency(generatedReportSummary.totalRevenueBase)}</p>
+                </div>
+                <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Thuế suất trung bình</span>
+                  <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-cyan)' }}>{tenant.accountingRegime === 'TT133' ? '10%' : '1.5%'}</p>
                 </div>
                 <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.1)' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Tổng thuế phải nộp</span>

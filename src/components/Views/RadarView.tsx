@@ -1,12 +1,9 @@
-import React from 'react';
 import { 
   AlertTriangle,
   ArrowRight,
-  ShieldCheck,
-  Building2,
-  Sparkles
+  ShieldCheck
 } from 'lucide-react';
-import { RiskAlert } from '../../mockData';
+import type { RiskAlert } from '../../mockData';
 
 interface RadarViewProps {
   alerts: RiskAlert[];

@@ -2,11 +2,9 @@ import { useState, useMemo, useCallback } from 'react';
 import { 
   MOCK_TENANTS, 
   MOCK_INVOICES, 
-  MOCK_JOURNALS, 
-  MOCK_HTKK_XML_TEMPLATES,
-  Invoice,
-  JournalEntry
+  MOCK_JOURNALS
 } from '../mockData';
+import type { Invoice, JournalEntry } from '../mockData';
 
 export const useSmartTax = () => {
   const [activeTenantId, setActiveTenantId] = useState<string>('t-001');

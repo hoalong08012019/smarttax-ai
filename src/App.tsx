@@ -17,10 +17,9 @@ import {
   EMBEDDED_KNOWLEDGE_SOURCES,
   MOCK_QA_KNOWLEDGE,
   MOCK_HTKK_XML_TEMPLATES,
-  MOCK_CIRCULAR_88_BOOKS,
-  Invoice,
-  JournalEntry
+  MOCK_CIRCULAR_88_BOOKS
 } from './mockData';
+import type { Invoice, JournalEntry } from './mockData';
 
 export default function App() {
   const smartTax = useSmartTax();

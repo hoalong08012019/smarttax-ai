@@ -1,14 +1,12 @@
 import React from 'react';
 import { 
-  Building2, 
   ArrowUpRight, 
   ArrowDownLeft, 
   ShieldCheck, 
   AlertTriangle, 
-  Sparkles,
   ArrowRight
 } from 'lucide-react';
-import { Tenant, RiskAlert } from '../../mockData';
+import type { Tenant, RiskAlert } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
 
 interface OverviewProps {

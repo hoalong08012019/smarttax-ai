@@ -1,13 +1,10 @@
-import React from 'react';
 import { 
   RefreshCw, 
   UploadCloud, 
   CheckCircle2, 
-  AlertTriangle,
-  Download,
-  FileCode
+  Download
 } from 'lucide-react';
-import { Invoice } from '../../mockData';
+import type { Invoice } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
 
 interface SyncViewProps {

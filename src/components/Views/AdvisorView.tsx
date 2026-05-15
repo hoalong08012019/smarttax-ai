@@ -1,14 +1,11 @@
 import React from 'react';
 import { 
-  MessageSquare, 
   Database, 
   Send, 
   Sparkles,
-  BookOpen,
-  FileCode,
   ShieldCheck
 } from 'lucide-react';
-import { EmbeddedSource, LegalQA } from '../../mockData';
+import type { EmbeddedSource } from '../../mockData';
 
 interface AdvisorViewProps {
   chatHistory: Array<{ sender: 'USER' | 'AI'; text: string; citation?: string }>;
