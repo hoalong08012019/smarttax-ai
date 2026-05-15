@@ -391,10 +391,48 @@ export const EMBEDDED_KNOWLEDGE_SOURCES: EmbeddedSource[] = [
     vectorDimension: 1536,
     sampleEmbeddedText: 'Giảm thuế giá trị gia tăng đối với các nhóm hàng hóa, dịch vụ đang áp dụng mức thuế suất 10% xuống còn 8%, trừ nhóm hàng hóa viễn thông, hoạt động tài chính, ngân hàng, chứng khoán, bảo hiểm, kinh doanh bất động sản, kim loại và sản phẩm từ kim loại đúc sẵn, sản phẩm khai khoáng (không kể khai thác than), than cốc, dầu mỏ tinh chế, sản phẩm hoá chất...',
     lastUpdated: '14/05/2026 (Đã Vector Hóa)'
+  },
+  {
+    id: 'src-hv-tc',
+    type: 'KE_TOAN',
+    title: 'Giáo trình Học viện Tài chính (AOF)',
+    purpose: 'Cơ sở lý luận về phân tích dòng tiền và quản trị tài chính.',
+    totalChunks: 3500,
+    vectorDimension: 1536,
+    sampleEmbeddedText: 'Chương 5: Quản trị dòng tiền (Cash Flow Management). Dòng tiền thuần từ hoạt động kinh doanh (OCF) là chỉ số quan trọng nhất đánh giá khả năng sinh lời thực tế của doanh nghiệp. Một doanh nghiệp có lợi nhuận kế toán (Net Income) dương nhưng OCF âm trong dài hạn sẽ đối mặt với nguy cơ phá sản cao do mất khả năng thanh toán...',
+    lastUpdated: 'Học kỳ I / 2026'
+  },
+  {
+    id: 'src-ueh',
+    type: 'KE_TOAN',
+    title: 'Tư liệu ĐH Kinh tế TP.HCM (UEH)',
+    purpose: 'Kế toán quản trị và tối ưu hóa chi phí thuế doanh nghiệp.',
+    totalChunks: 2800,
+    vectorDimension: 1536,
+    sampleEmbeddedText: 'Chiến lược lập kế hoạch thuế (Tax Planning) không phải là trốn thuế. Đó là việc tận dụng các ưu đãi đầu tư, địa bàn ưu đãi và các phương thức trích khấu hao nhanh theo Thông tư 45/2013/TT-BTC để tối ưu hóa dòng tiền và giảm nghĩa vụ thuế TNDN một cách hợp pháp...',
+    lastUpdated: 'Dữ liệu Nghiên cứu 2025'
   }
 ];
 
 export const MOCK_QA_KNOWLEDGE: LegalQA[] = [
+  {
+    id: 'qa-cashflow',
+    sourceId: 'src-hv-tc',
+    question: 'Làm thế nào để quản trị dòng tiền hiệu quả khi doanh nghiệp đang trong giai đoạn mở rộng nhanh?',
+    shortAnswer: 'Tập trung vào chu kỳ chuyển đổi tiền mặt (CCC), tối ưu hóa hàng tồn kho và tận dụng tín dụng thương mại.',
+    legalCitation: 'Giáo trình Quản trị Tài chính Doanh nghiệp - Học viện Tài chính',
+    fullAnalysis: 'Phân tích từ chuyên gia AI dựa trên tư liệu **Học viện Tài chính**:\n1. **Chu kỳ tiền mặt (CCC)**: Cần rút ngắn thời gian thu hồi nợ (DSO) và kéo dài thời gian trả nợ nhà cung cấp (DPO) một cách hợp lý.\n2. **Dòng tiền tự do (FCF)**: Theo dõi sát sao dòng tiền còn lại sau khi đã trừ các khoản chi đầu tư tài sản cố định (CAPEX).\n3. **Lời khuyên**: Trong giai đoạn tăng trưởng, rủi ro lớn nhất là "Overtrading" - doanh số tăng mạnh nhưng tiền mặt bị chôn vùi trong nợ phải thu và hàng tồn kho.',
+    tags: ['Dòng tiền', 'Tài chính', 'Quản trị']
+  },
+  {
+    id: 'qa-taxplanning',
+    sourceId: 'src-ueh',
+    question: 'Có những phương thức hợp pháp nào để tối ưu hóa thuế TNDN cho doanh nghiệp phần mềm?',
+    shortAnswer: 'Tận dụng ưu đãi thuế suất 10% trong 15 năm, miễn 4 năm và giảm 50% trong 9 năm tiếp theo cho dự án phần mềm mới.',
+    legalCitation: 'Điều 11 & 12 Thông tư 96/2015/TT-BTC & Tư liệu UEH',
+    fullAnalysis: 'Theo **Đại học Kinh tế TP.HCM** và quy định hiện hành:\n- **Ưu đãi ngành nghề**: Sản xuất phần mềm là lĩnh vực ưu đãi đầu tư cao nhất.\n- **Điều kiện**: Doanh nghiệp phải có dự án đầu tư mới và đáp ứng tiêu chuẩn quy trình sản xuất phần mềm của Bộ Thông tin & Truyền thông.\n- **Kết quả**: Giảm mức thuế suất thực tế từ 20% xuống mức trung bình khoảng 5-7% trong suốt vòng đời ưu đãi.',
+    tags: ['Tối ưu thuế', 'Thuế TNDN', 'Doanh nghiệp phần mềm']
+  },
   {
     id: 'qa-1',
     sourceId: 'src-luat-38',

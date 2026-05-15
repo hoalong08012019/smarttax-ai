@@ -102,12 +102,29 @@ export const AdvisorView: React.FC<AdvisorViewProps> = ({
                 color: chat.sender === 'USER' ? '#000000' : '#ffffff',
                 border: chat.sender === 'USER' ? 'none' : '1px solid rgba(255,255,255,0.05)',
                 fontSize: '13px',
-                lineHeight: 1.5
+                lineHeight: 1.6
               }}>
+                {chat.sender === 'AI' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                    <div style={{ padding: '2px 6px', borderRadius: '4px', backgroundColor: 'var(--accent-purple)', color: '#ffffff', fontSize: '9px', fontWeight: 800 }}>ACADEMIC RAG</div>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Verified Source</span>
+                  </div>
+                )}
                 <div style={{ whiteSpace: 'pre-wrap' }}>{chat.text}</div>
                 {chat.citation && (
-                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '10px', fontWeight: 700, color: chat.sender === 'USER' ? 'rgba(0,0,0,0.6)' : 'var(--accent-emerald)' }}>
-                    📖 Trích dẫn: {chat.citation}
+                  <div style={{ 
+                    marginTop: '12px', 
+                    paddingTop: '10px', 
+                    borderTop: '1px solid rgba(255,255,255,0.1)', 
+                    fontSize: '11px', 
+                    fontWeight: 600, 
+                    color: chat.sender === 'USER' ? 'rgba(0,0,0,0.6)' : '#d4a6ff',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '6px'
+                  }}>
+                    <ShieldCheck size={14} style={{ marginTop: '2px' }} />
+                    <span>Cơ sở pháp lý: {chat.citation}</span>
                   </div>
                 )}
               </div>
