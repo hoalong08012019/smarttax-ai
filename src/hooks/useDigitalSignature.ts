@@ -1,9 +1,14 @@
 import { useState, useCallback } from 'react';
 
+// Security Configuration
+const MOCK_DEVICE_PIN = '123456';
+const MAX_PIN_ATTEMPTS = 3;
+
 export interface SignatureStatus {
   isConnected: boolean;
   deviceName: string | null;
   isLocked: boolean;
+  isBlocked: boolean; // For security lockout
   lastSignedAt: string | null;
 }
 
@@ -12,19 +17,23 @@ export const useDigitalSignature = () => {
     isConnected: false,
     deviceName: null,
     isLocked: true,
+    isBlocked: false,
     lastSignedAt: null
   });
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [pinInput, setPinInput] = useState('');
+  const [pinAttempts, setPinAttempts] = useState(0);
   const [showPinDialog, setShowPinDialog] = useState(false);
 
   // Simulate WebHID Device Request
   const requestToken = useCallback(async () => {
-    setIsConnecting(true);
+    if (status.isBlocked) {
+      throw new Error('Thiết bị đã bị khóa do nhập sai mã PIN quá nhiều lần. Vui lòng liên hệ nhà cung cấp CA.');
+    }
     
-    // Simulating hardware latency
+    setIsConnecting(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     const mockDevices = [
@@ -44,30 +53,43 @@ export const useDigitalSignature = () => {
     
     setIsConnecting(false);
     return randomDevice.name;
-  }, []);
+  }, [status.isBlocked]);
 
   const disconnectToken = useCallback(() => {
-    setStatus({
+    setStatus(prev => ({
+      ...prev,
       isConnected: false,
       deviceName: null,
       isLocked: true,
-      lastSignedAt: status.lastSignedAt
-    });
-  }, [status.lastSignedAt]);
+      // Persist lastSignedAt for session visibility
+    }));
+  }, []);
 
   const openPinDialog = useCallback(() => {
     if (!status.isConnected) return;
+    if (status.isBlocked) return;
     setShowPinDialog(true);
-  }, [status.isConnected]);
+  }, [status.isConnected, status.isBlocked]);
 
   const verifyPinAndSign = useCallback(async (xmlContent: string) => {
-    if (pinInput !== '123456') { // Mock PIN
-      throw new Error('Mã PIN không chính xác. Vui lòng thử lại.');
+    if (status.isBlocked) return;
+
+    if (pinInput !== MOCK_DEVICE_PIN) {
+      const newAttempts = pinAttempts + 1;
+      setPinAttempts(newAttempts);
+      
+      if (newAttempts >= MAX_PIN_ATTEMPTS) {
+        setStatus(prev => ({ ...prev, isBlocked: true, isConnected: false }));
+        setShowPinDialog(false);
+        throw new Error('CẢNH BÁO BẢO MẬT: Thiết bị đã bị khóa vĩnh viễn do nhập sai PIN 3 lần!');
+      }
+      
+      throw new Error(`Mã PIN không chính xác. Bạn còn ${MAX_PIN_ATTEMPTS - newAttempts} lần thử.`);
     }
 
     setIsSigning(true);
+    setPinAttempts(0); // Reset on success
     
-    // Simulate cryptographic signing delay (hash + sign)
     await new Promise(resolve => setTimeout(resolve, 2500));
     
     const timestamp = new Date().toLocaleString('vi-VN');
@@ -82,10 +104,8 @@ export const useDigitalSignature = () => {
     setShowPinDialog(false);
     setPinInput('');
     
-    // In a real app, this would return the signed XML string
-    // wrapped in <Signature> tags according to XAdES-BES standard
     return `<!-- Signed by ${status.deviceName} at ${timestamp} -->\n${xmlContent}`;
-  }, [pinInput, status.deviceName]);
+  }, [pinInput, pinAttempts, status.deviceName, status.isBlocked]);
 
   return {
     ...status,
@@ -98,6 +118,7 @@ export const useDigitalSignature = () => {
     pinInput,
     setPinInput,
     openPinDialog,
-    verifyPinAndSign
+    verifyPinAndSign,
+    remainingAttempts: MAX_PIN_ATTEMPTS - pinAttempts
   };
 };

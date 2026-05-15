@@ -60,7 +60,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
             e.preventDefault();
             const targetPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'smarttax2026';
             if (adminPasscodeInput === targetPasscode) {
-              sessionStorage.setItem('smarttax_admin_auth', 'true');
+              const sessionData = {
+                authenticated: true,
+                expiresAt: Date.now() + 30 * 60 * 1000 // 30 minutes
+              };
+              sessionStorage.setItem('smarttax_admin_auth', JSON.stringify(sessionData));
               setIsAdminAuthenticated(true);
               setAdminAuthError(null);
             } else {

@@ -30,7 +30,7 @@ export default function App() {
     activeTab, setActiveTab,
     tenant,
     isSyncing, setIsSyncing,
-    syncLog, setSyncLog,
+    syncLog, appendToSyncLog,
     localInvoices, setLocalInvoices,
     localJournals, setLocalJournals,
     uploadedFileName, setUploadedFileName,
@@ -52,10 +52,10 @@ export default function App() {
   // Actions
   const handleTriggerGdtSync = () => {
     setIsSyncing(true);
-    setSyncLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] Bắt đầu truy vấn cổng dữ liệu GDT (Hóa đơn điện tử)...`]);
+    appendToSyncLog('Bắt đầu truy vấn cổng dữ liệu GDT (Hóa đơn điện tử)...');
     
     setTimeout(() => {
-      setSyncLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] Tìm thấy 2 hóa đơn mới phát sinh từ hệ thống tra cứu GDT.`]);
+      appendToSyncLog('Tìm thấy 2 hóa đơn mới phát sinh từ hệ thống tra cứu GDT.');
       
       const newInv: Invoice = {
         id: `inv-synced-${Date.now()}`,
@@ -90,7 +90,7 @@ export default function App() {
       };
 
       setLocalJournals(prev => ({ ...prev, [activeTenantId]: [newEntry, ...(prev[activeTenantId] || [])] }));
-      setSyncLog(prev => [...prev, `[${new Date().toLocaleTimeString()}] Phân tích hóa đơn hoàn tất. Hạch toán kép tự động theo đúng chế độ ${tenant.accountingRegime === 'TT133' ? 'Thông tư 133/2016' : 'Thông tư 88/2021'}!`]);
+      appendToSyncLog(`Phân tích hóa đơn hoàn tất. Hạch toán kép tự động theo đúng chế độ ${tenant.accountingRegime === 'TT133' ? 'Thông tư 133/2016' : 'Thông tư 88/2021'}!`);
       setIsSyncing(false);
     }, 2000);
   };

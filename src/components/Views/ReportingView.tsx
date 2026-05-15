@@ -61,10 +61,10 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
       {/* PIN DIALOG OVERLAY */}
       {ds.showPinDialog && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="content-card animate-fade-in" style={{ width: '100%', maxWidth: '380px', border: '1px solid var(--accent-lime)' }}>
+          <div className="content-card animate-fade-in" style={{ width: '100%', maxWidth: '380px', border: ds.remainingAttempts === 1 ? '1px solid #ff4444' : '1px solid var(--accent-lime)' }}>
             <div className="flex-row-between" style={{ marginBottom: '20px' }}>
               <div className="flex-row-center" style={{ gap: '10px' }}>
-                <Lock size={18} color="var(--accent-lime)" />
+                <Lock size={18} color={ds.remainingAttempts === 1 ? '#ff4444' : 'var(--accent-lime)'} />
                 <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Xác thực PIN USB Token</h3>
               </div>
               <button onClick={() => ds.setShowPinDialog(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
@@ -82,10 +82,15 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
                 value={ds.pinInput}
                 onChange={(e) => ds.setPinInput(e.target.value)}
                 placeholder="Nhập mã PIN Token"
-                style={{ width: '100%', padding: '12px', borderRadius: '6px', backgroundColor: '#000000', border: '1px solid var(--border-color)', color: 'var(--accent-lime)', fontSize: '14px', textAlign: 'center', letterSpacing: '0.5em' }}
+                style={{ width: '100%', padding: '12px', borderRadius: '6px', backgroundColor: '#000000', border: '1px solid var(--border-color)', color: ds.remainingAttempts === 1 ? '#ff4444' : 'var(--accent-lime)', fontSize: '14px', textAlign: 'center', letterSpacing: '0.5em' }}
                 autoFocus
               />
-              <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '6px', textAlign: 'center' }}>Gợi ý PIN: 123456</span>
+              <div className="flex-row-between" style={{ marginTop: '8px' }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Gợi ý PIN: 123456</span>
+                <span style={{ fontSize: '10px', color: ds.remainingAttempts === 1 ? '#ff4444' : 'var(--text-muted)', fontWeight: 700 }}>
+                  Còn {ds.remainingAttempts} lần thử
+                </span>
+              </div>
             </div>
 
             {error && (
@@ -98,7 +103,7 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
               onClick={handleSign}
               disabled={ds.isSigning || !ds.pinInput}
               className="btn-primary" 
-              style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '12px', backgroundColor: ds.remainingAttempts === 1 ? '#ff4444' : '' }}
             >
               {ds.isSigning ? <RefreshCw size={14} className="animate-spin" /> : <Unlock size={14} />}
               <span>{ds.isSigning ? 'Đang thực hiện ký số...' : 'Xác nhận Ký số XML'}</span>

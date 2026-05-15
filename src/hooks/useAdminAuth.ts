@@ -3,7 +3,18 @@ import { useState } from 'react';
 export const useAdminAuth = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('smarttax_admin_auth') === 'true';
+      const raw = sessionStorage.getItem('smarttax_admin_auth');
+      if (!raw) return false;
+      try {
+        const data = JSON.parse(raw);
+        if (data.authenticated && data.expiresAt > Date.now()) {
+          return true;
+        }
+        // Session expired or invalid
+        sessionStorage.removeItem('smarttax_admin_auth');
+      } catch (e) {
+        return false;
+      }
     }
     return false;
   });

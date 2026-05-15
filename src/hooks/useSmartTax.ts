@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { 
   MOCK_TENANTS, 
   MOCK_INVOICES, 
@@ -6,12 +6,33 @@ import {
 } from '../mockData';
 import type { Invoice, JournalEntry } from '../mockData';
 
+export interface ReportSummary {
+  periodText: string;
+  totalRevenueBase: number;
+  totalVatDeductible: number;
+  payableVat: number;
+  payableCitOrPit: number;
+  deadlineStr: string;
+  verifiedLog: string;
+}
+
 export const useSmartTax = () => {
   const [activeTenantId, setActiveTenantId] = useState<string>('t-001');
   const [activeTab, setActiveTab] = useState<string>('overview');
   
   const tenant = useMemo(() => {
     return MOCK_TENANTS.find(t => t.id === activeTenantId) || MOCK_TENANTS[0];
+  }, [activeTenantId]);
+
+  // Reset certain states when tenant changes for data isolation
+  useEffect(() => {
+    setSyncLog([
+      'Hệ thống khởi tạo kết nối tự động...',
+      'Đã tải chứng thư số SSL/TLS với Tổng cục Thuế thành công.'
+    ]);
+    setOcrParsingStatus('IDLE');
+    setUploadedFileName(null);
+    setNewOcrResult(null);
   }, [activeTenantId]);
 
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -28,12 +49,11 @@ export const useSmartTax = () => {
 
   const [riskFilter, setRiskFilter] = useState<'ALL' | 'CRITICAL' | 'WARNING' | 'INFO'>('ALL');
   const [selectedDeclarationForm, setSelectedDeclarationForm] = useState<string>('01/GTGT');
-  const [selectedCircular88Book, setSelectedCircular88Book] = useState<'S1' | 'S2' | 'S3' | 'S4'>('S1');
 
   const [reportPeriodType, setReportPeriodType] = useState<'MONTH' | 'QUARTER' | 'YEAR'>('MONTH');
   const [reportPeriodValue, setReportPeriodValue] = useState<string>('04');
   const [isGeneratingReport, setIsGeneratingReport] = useState<boolean>(false);
-  const [generatedReportSummary, setGeneratedReportSummary] = useState<any | null>({
+  const [generatedReportSummary, setGeneratedReportSummary] = useState<ReportSummary | null>({
     periodText: 'Tháng 04 / 2026',
     totalRevenueBase: 150000000,
     totalVatDeductible: 12500000,
@@ -42,6 +62,13 @@ export const useSmartTax = () => {
     deadlineStr: '20/05/2026',
     verifiedLog: 'Đã nội suy tự động từ Sổ Cái Kế toán. Khớp 100% hóa đơn GDT xác thực.'
   });
+
+  const appendToSyncLog = useCallback((message: string) => {
+    setSyncLog(prev => {
+      const newLog = [...prev, `[${new Date().toLocaleTimeString()}] ${message}`];
+      return newLog.slice(-50); // Keep only last 50 entries to prevent memory issues
+    });
+  }, []);
 
   const handleCalculateDynamicReport = useCallback((pType = reportPeriodType, pVal = reportPeriodValue) => {
     setIsGeneratingReport(true);
@@ -96,7 +123,7 @@ export const useSmartTax = () => {
     activeTab, setActiveTab,
     tenant,
     isSyncing, setIsSyncing,
-    syncLog, setSyncLog,
+    syncLog, appendToSyncLog,
     localInvoices, setLocalInvoices,
     localJournals, setLocalJournals,
     uploadedFileName, setUploadedFileName,
@@ -104,7 +131,6 @@ export const useSmartTax = () => {
     newOcrResult, setNewOcrResult,
     riskFilter, setRiskFilter,
     selectedDeclarationForm, setSelectedDeclarationForm,
-    selectedCircular88Book, setSelectedCircular88Book,
     reportPeriodType, setReportPeriodType,
     reportPeriodValue, setReportPeriodValue,
     isGeneratingReport,
