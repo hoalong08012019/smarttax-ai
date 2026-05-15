@@ -95,7 +95,6 @@ export const useDigitalSignature = () => {
     // Simulate complex RSA/ECDSA signing delay
     await new Promise(resolve => setTimeout(resolve, status.method === 'USB_TOKEN' ? 2500 : 4000));
     
-    const timestamp = new Date().toISOString();
     const signatureValue = Math.random().toString(36).substring(7).toUpperCase();
     
     setStatus(prev => ({
