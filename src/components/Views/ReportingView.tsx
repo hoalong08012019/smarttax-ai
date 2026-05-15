@@ -170,47 +170,59 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
         </div>
 
         {/* DIGITAL SIGNATURE BRIDGE PANEL */}
-        <div className="content-card" style={{ border: ds.isConnected ? '1px solid rgba(204,255,0,0.3)' : '1px solid var(--border-color)' }}>
+        <div className="content-card" style={{ border: ds.isConnected ? '1px solid rgba(157,0,255,0.3)' : '1px solid var(--border-color)' }}>
           <div className="flex-row-between" style={{ marginBottom: '16px' }}>
             <div className="flex-row-center" style={{ gap: '10px' }}>
-              <Usb size={18} color={ds.isConnected ? 'var(--accent-lime)' : 'var(--text-muted)'} />
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Cầu nối Ký số USB Token</h3>
+              <Usb size={18} color={ds.isConnected ? 'var(--accent-purple)' : 'var(--text-muted)'} />
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Cầu nối Ký số SmartTax Bridge</h3>
             </div>
-            {ds.isConnected && <span className="live-indicator"></span>}
+            {ds.isConnected && <span className="live-indicator" style={{ backgroundColor: 'var(--accent-purple)' }}></span>}
           </div>
 
           {!ds.isConnected ? (
-            <div style={{ textAlign: 'center', padding: '20px 0' }}>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                Chưa phát hiện thiết bị ký số vật lý (PKCS#11).
-              </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <button 
-                onClick={ds.requestToken}
+                onClick={() => ds.requestToken('USB_TOKEN')}
                 disabled={ds.isConnecting}
                 className="btn-secondary" 
                 style={{ width: '100%', justifyContent: 'center' }}
               >
-                {ds.isConnecting ? <RefreshCw size={14} className="animate-spin" /> : <Usb size={14} />}
-                <span>{ds.isConnecting ? 'Đang quét thiết bị HID...' : 'Quét & Kết nối USB Token'}</span>
+                <Usb size={14} />
+                <span>USB Token (PKCS#11)</span>
+              </button>
+              <button 
+                onClick={() => ds.requestToken('SMART_CA')}
+                disabled={ds.isConnecting}
+                className="btn-secondary" 
+                style={{ width: '100%', justifyContent: 'center', borderColor: 'rgba(157,0,255,0.2)' }}
+              >
+                <Sparkles size={14} color="#d4a6ff" />
+                <span style={{ color: '#d4a6ff' }}>SmartCA (Remote Signing)</span>
               </button>
             </div>
           ) : (
             <div className="animate-fade-in">
-              <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '16px' }}>
-                <div className="flex-row-between" style={{ marginBottom: '4px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Thiết bị:</span>
-                  <span style={{ fontSize: '11px', color: 'var(--accent-lime)', fontWeight: 700 }}>{ds.deviceName}</span>
+              <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(157,0,255,0.1)', marginBottom: '16px' }}>
+                <div style={{ marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block' }}>CHỨNG THƯ ĐANG SỬ DỤNG:</span>
+                  <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: 700 }}>{ds.certInfo?.subject}</span>
                 </div>
-                <div className="flex-row-between">
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Trạng thái:</span>
-                  <span style={{ fontSize: '11px', color: 'var(--accent-emerald)', fontWeight: 700 }}>Sẵn sàng (Online)</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div>
+                    <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>Nhà CC:</span>
+                    <span style={{ fontSize: '10px', color: '#ffffff' }}>{ds.certInfo?.issuer}</span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>Serial:</span>
+                    <span style={{ fontSize: '10px', color: '#ffffff', fontFamily: 'monospace' }}>{ds.certInfo?.serialNumber}</span>
+                  </div>
                 </div>
               </div>
               <button 
                 onClick={ds.disconnectToken}
                 style={{ width: '100%', background: 'none', border: '1px solid rgba(255,51,51,0.2)', color: '#ff4444', fontSize: '10px', padding: '6px', borderRadius: '4px', cursor: 'pointer' }}
               >
-                Ngắt kết nối thiết bị
+                Ngắt kết nối {ds.method === 'USB_TOKEN' ? 'Token' : 'Remote Session'}
               </button>
             </div>
           )}
