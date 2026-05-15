@@ -184,7 +184,6 @@ export default function App() {
       MOCK_QA_KNOWLEDGE.forEach(item => {
         let score = 0;
         const keywords = item.tags.map(t => t.toLowerCase());
-        const questionWords = item.question.toLowerCase().split(' ');
         
         // Match tags
         keywords.forEach(kw => { if (qLower.includes(kw)) score += 5; });
