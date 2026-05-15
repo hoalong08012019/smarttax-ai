@@ -11,6 +11,7 @@ import { AccountingView } from './components/Views/AccountingView';
 import { RadarView } from './components/Views/RadarView';
 import { ReportingView } from './components/Views/ReportingView';
 import { AdvisorView } from './components/Views/AdvisorView';
+import { ChatWidget } from './components/ChatWidget';
 import { 
   MOCK_TENANTS, 
   MOCK_ALERTS, 
@@ -312,6 +313,13 @@ export default function App() {
           )}
         </main>
       </div>
+
+      <ChatWidget 
+        chatHistory={chatHistory}
+        customQuestionInput={customQuestionInput}
+        setCustomQuestionInput={setCustomQuestionInput}
+        handleSendCustomQuestion={handleSendCustomQuestion}
+      />
     </div>
   );
 }
