@@ -5,7 +5,7 @@ import {
   CheckCircle2, 
   AlertTriangle 
 } from 'lucide-react';
-import type { Invoice, JournalEntry, Tenant } from '../../mockData';
+import type { Invoice, JournalEntry } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
 
 interface AccountingViewProps {
