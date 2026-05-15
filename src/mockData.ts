@@ -389,28 +389,8 @@ export const EMBEDDED_KNOWLEDGE_SOURCES: EmbeddedSource[] = [
     purpose: 'Chính sách giảm thuế GTGT từ 10% xuống 8%.',
     totalChunks: 880,
     vectorDimension: 1536,
-    sampleEmbeddedText: 'Giảm thuế giá trị gia tăng đối với các nhóm hàng hóa, dịch vụ đang áp dụng mức thuế suất 10% xuống còn 8%, trừ nhóm hàng hóa viễn thông, hoạt động tài chính, ngân hàng, chứng khoán, bảo hiểm, kinh doanh bất động sản, kim loại và sản phẩm từ kim loại đúc sẵn, sản phẩm khai khoáng (không kể khai thác than), than cốc, dầu mỏ tinh chế, sản phẩm hoá chất...',
+    sampleEmbeddedText: 'Giảm thuế giá trị gia tăng đối với các nhóm hàng hóa, dịch vụ đang áp dụng mức thuế suất 10% xuống còn 8%, trừ nhóm hàng hóa viễn thông, hoạt động tài chính...',
     lastUpdated: '14/05/2026 (Đã Vector Hóa)'
-  },
-  {
-    id: 'src-hv-tc',
-    type: 'KE_TOAN',
-    title: 'Giáo trình Học viện Tài chính (AOF)',
-    purpose: 'Cơ sở lý luận về phân tích dòng tiền và quản trị tài chính.',
-    totalChunks: 3500,
-    vectorDimension: 1536,
-    sampleEmbeddedText: 'Chương 5: Quản trị dòng tiền (Cash Flow Management). Dòng tiền thuần từ hoạt động kinh doanh (OCF) là chỉ số quan trọng nhất đánh giá khả năng sinh lời thực tế của doanh nghiệp. Một doanh nghiệp có lợi nhuận kế toán (Net Income) dương nhưng OCF âm trong dài hạn sẽ đối mặt với nguy cơ phá sản cao do mất khả năng thanh toán...',
-    lastUpdated: 'Học kỳ I / 2026'
-  },
-  {
-    id: 'src-ueh',
-    type: 'KE_TOAN',
-    title: 'Tư liệu ĐH Kinh tế TP.HCM (UEH)',
-    purpose: 'Kế toán quản trị và tối ưu hóa chi phí thuế doanh nghiệp.',
-    totalChunks: 2800,
-    vectorDimension: 1536,
-    sampleEmbeddedText: 'Chiến lược lập kế hoạch thuế (Tax Planning) không phải là trốn thuế. Đó là việc tận dụng các ưu đãi đầu tư, địa bàn ưu đãi và các phương thức trích khấu hao nhanh theo Thông tư 45/2013/TT-BTC để tối ưu hóa dòng tiền và giảm nghĩa vụ thuế TNDN một cách hợp pháp...',
-    lastUpdated: 'Dữ liệu Nghiên cứu 2025'
   }
 ];
 
@@ -418,11 +398,29 @@ export const MOCK_QA_KNOWLEDGE: LegalQA[] = [
   {
     id: 'qa-cashflow',
     sourceId: 'src-hv-tc',
-    question: 'Làm thế nào để quản trị dòng tiền hiệu quả khi doanh nghiệp đang trong giai đoạn mở rộng nhanh?',
-    shortAnswer: 'Tập trung vào chu kỳ chuyển đổi tiền mặt (CCC), tối ưu hóa hàng tồn kho và tận dụng tín dụng thương mại.',
-    legalCitation: 'Giáo trình Quản trị Tài chính Doanh nghiệp - Học viện Tài chính',
-    fullAnalysis: 'Phân tích từ chuyên gia AI dựa trên tư liệu **Học viện Tài chính**:\n1. **Chu kỳ tiền mặt (CCC)**: Cần rút ngắn thời gian thu hồi nợ (DSO) và kéo dài thời gian trả nợ nhà cung cấp (DPO) một cách hợp lý.\n2. **Dòng tiền tự do (FCF)**: Theo dõi sát sao dòng tiền còn lại sau khi đã trừ các khoản chi đầu tư tài sản cố định (CAPEX).\n3. **Lời khuyên**: Trong giai đoạn tăng trưởng, rủi ro lớn nhất là "Overtrading" - doanh số tăng mạnh nhưng tiền mặt bị chôn vùi trong nợ phải thu và hàng tồn kho.',
-    tags: ['Dòng tiền', 'Tài chính', 'Quản trị']
+    question: 'Quy định về quản trị dòng tiền theo giáo trình chính thống của Học viện Tài chính?',
+    shortAnswer: 'Dòng tiền thuần từ hoạt động kinh doanh (OCF) phản ánh chênh lệch giữa các dòng tiền vào và dòng tiền ra phát sinh từ các hoạt động tạo ra doanh thu chủ yếu của doanh nghiệp.',
+    legalCitation: 'Giáo trình Quản trị Tài chính Doanh nghiệp - Học viện Tài chính (Trang 156)',
+    fullAnalysis: 'Trích dẫn nguyên văn:\n"Dòng tiền từ hoạt động kinh doanh là chỉ tiêu quan trọng nhất, phản ánh khả năng của doanh nghiệp trong việc tạo ra đủ tiền để duy trì hoạt động, trả nợ, chia cổ tức và thực hiện các khoản đầu tư mới mà không cần đến các nguồn tài trợ bên ngoài. Phương pháp gián tiếp để xác định OCF bắt đầu từ lợi nhuận trước thuế và điều chỉnh cho các khoản không phải bằng tiền như khấu hao, dự phòng và các thay đổi trong vốn lưu động."',
+    tags: ['Dòng tiền', 'OCF', 'Học viện Tài chính']
+  },
+  {
+    id: 'qa-tax-deadline',
+    sourceId: 'src-luat-38',
+    question: 'Thời hạn nộp hồ sơ khai thuế GTGT được quy định cụ thể tại văn bản luật nào?',
+    shortAnswer: 'Chậm nhất là ngày thứ 20 của tháng tiếp theo (tháng) hoặc ngày cuối cùng của tháng đầu quý tiếp theo (quý).',
+    legalCitation: 'Điều 44 Luật Quản lý thuế số 38/2019/QH14',
+    fullAnalysis: 'Trích dẫn Điều 44 Luật Quản lý thuế số 38/2019/QH14:\n"1. Thời hạn nộp hồ sơ khai thuế đối với loại thuế khai theo tháng, theo quý được quy định như sau:\na) Chậm nhất là ngày thứ 20 của tháng tiếp theo liền kề tháng phát sinh nghĩa vụ thuế đối với trường hợp khai và nộp theo tháng;\nb) Chậm nhất là ngày cuối cùng của tháng đầu của quý tiếp theo liền kề quý phát sinh nghĩa vụ thuế đối với trường hợp khai và nộp theo quý.\n2. Thời hạn nộp hồ sơ khai thuế đối với loại thuế có kỳ tính thuế theo năm..."',
+    tags: ['Thời hạn nộp thuế', 'Luật 38', 'GTGT']
+  },
+  {
+    id: 'qa-invoice-timing',
+    sourceId: 'src-nd-123',
+    question: 'Thời điểm lập hóa đơn đối với bán hàng hóa và cung cấp dịch vụ theo quy định chính phủ?',
+    shortAnswer: 'Bán hàng: Thời điểm chuyển giao quyền sở hữu. Dịch vụ: Thời điểm hoàn thành việc cung cấp dịch vụ.',
+    legalCitation: 'Điều 9 Nghị định số 123/2020/NĐ-CP',
+    fullAnalysis: 'Trích dẫn nguyên văn Nghị định 123/2020/NĐ-CP:\n"1. Thời điểm lập hóa đơn đối với bán hàng hóa (bao gồm cả bán tài sản nhà nước, tài sản tịch thu, sung quỹ nhà nước và bán hàng dự trữ quốc gia) là thời điểm chuyển giao quyền sở hữu hoặc quyền sử dụng hàng hóa cho người mua, không phân biệt đã thu được tiền hay chưa thu được tiền.\n2. Thời điểm lập hóa đơn đối với cung cấp dịch vụ là thời điểm hoàn thành việc cung cấp dịch vụ không phân biệt đã thu được tiền hay chưa thu được tiền. Trường hợp người cung cấp dịch vụ có thu tiền trước hoặc trong khi cung cấp dịch vụ thì thời điểm lập hóa đơn là thời điểm thu tiền..."',
+    tags: ['Nghị định 123', 'Hóa đơn', 'Thời điểm lập hóa đơn']
   },
   {
     id: 'qa-taxplanning',
