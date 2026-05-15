@@ -1,6 +1,6 @@
+import React from 'react';
 import { 
   AlertTriangle,
-  ArrowRight,
   ShieldCheck
 } from 'lucide-react';
 import type { RiskAlert } from '../../mockData';

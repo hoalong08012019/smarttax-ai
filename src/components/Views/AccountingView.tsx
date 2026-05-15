@@ -1,30 +1,21 @@
 import React from 'react';
 import { 
-  FileSpreadsheet, 
   Layers, 
   BookOpen, 
   CheckCircle2, 
   AlertTriangle 
 } from 'lucide-react';
-import { Invoice, JournalEntry, Tenant } from '../../mockData';
+import type { Invoice, JournalEntry, Tenant } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
 
 interface AccountingViewProps {
-  tenant: Tenant;
   currentInvoices: Invoice[];
   currentJournals: JournalEntry[];
-  selectedCircular88Book: 'S1' | 'S2' | 'S3' | 'S4';
-  setSelectedCircular88Book: (book: 'S1' | 'S2' | 'S3' | 'S4') => void;
-  mockCircular88Books: any[];
 }
 
 export const AccountingView: React.FC<AccountingViewProps> = ({
-  tenant,
   currentInvoices,
-  currentJournals,
-  selectedCircular88Book,
-  setSelectedCircular88Book,
-  mockCircular88Books
+  currentJournals
 }) => {
   return (
     <div className="animate-fade-in">

@@ -16,8 +16,7 @@ import {
   MOCK_ALERTS, 
   EMBEDDED_KNOWLEDGE_SOURCES,
   MOCK_QA_KNOWLEDGE,
-  MOCK_HTKK_XML_TEMPLATES,
-  MOCK_CIRCULAR_88_BOOKS
+  MOCK_HTKK_XML_TEMPLATES
 } from './mockData';
 import type { Invoice, JournalEntry } from './mockData';
 
@@ -39,7 +38,6 @@ export default function App() {
     newOcrResult, setNewOcrResult,
     riskFilter, setRiskFilter,
     selectedDeclarationForm, setSelectedDeclarationForm,
-    selectedCircular88Book, setSelectedCircular88Book,
     reportPeriodType, setReportPeriodType,
     reportPeriodValue, setReportPeriodValue,
     isGeneratingReport,
@@ -259,12 +257,8 @@ export default function App() {
 
           {activeTab === 'accounting' && (
             <AccountingView 
-              tenant={tenant}
               currentInvoices={currentInvoices}
               currentJournals={currentJournals}
-              selectedCircular88Book={selectedCircular88Book}
-              setSelectedCircular88Book={setSelectedCircular88Book}
-              mockCircular88Books={MOCK_CIRCULAR_88_BOOKS}
             />
           )}
 

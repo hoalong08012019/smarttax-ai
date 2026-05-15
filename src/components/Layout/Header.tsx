@@ -1,6 +1,5 @@
-import React from 'react';
 import { Sparkles, Building2 } from 'lucide-react';
-import { Tenant } from '../../mockData';
+import type { Tenant } from '../../mockData';
 
 interface HeaderProps {
   activeTenantId: string;
