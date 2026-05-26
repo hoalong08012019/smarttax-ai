@@ -12,6 +12,7 @@ import { RadarView } from './components/Views/RadarView';
 import { ReportingView } from './components/Views/ReportingView';
 import { AdvisorView } from './components/Views/AdvisorView';
 import { ChatWidget } from './components/ChatWidget';
+import { LoginScreen } from './components/Auth/LoginScreen';
 import { 
   MOCK_TENANTS, 
   MOCK_ALERTS, 
@@ -54,7 +55,11 @@ export default function App() {
     handleRunAccountingAudit,
     handleFixAuditIssue,
     handleUploadAccountingFile,
-    handleSimulateGdtFiling
+    handleSimulateGdtFiling,
+    isAuthenticated,
+    userType,
+    loginWithCredentials,
+    logoutUser
   } = smartTax;
 
   // Derived data
@@ -270,6 +275,15 @@ export default function App() {
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <LoginScreen 
+        onLoginSuccess={(tId, role) => loginWithCredentials(tId, role)}
+        onAdminPortal={() => setActiveTab('admin')}
+      />
+    );
+  }
+
   return (
     <div className="app-container">
       <Header 
@@ -277,6 +291,8 @@ export default function App() {
         setActiveTenantId={setActiveTenantId}
         tenants={MOCK_TENANTS}
         currentTenant={tenant}
+        userType={userType}
+        logoutUser={logoutUser}
       />
 
       <div className="regime-banner">

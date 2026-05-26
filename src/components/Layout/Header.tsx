@@ -1,4 +1,5 @@
-import { Sparkles, Building2 } from 'lucide-react';
+import React from 'react';
+import { Sparkles, Building2, LogOut } from 'lucide-react';
 import type { Tenant } from '../../mockData';
 
 interface HeaderProps {
@@ -6,13 +7,17 @@ interface HeaderProps {
   setActiveTenantId: (id: string) => void;
   tenants: Tenant[];
   currentTenant: Tenant;
+  userType: 'SME' | 'HOUSEHOLD' | null;
+  logoutUser: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTenantId,
   setActiveTenantId,
   tenants,
-  currentTenant
+  currentTenant,
+  userType,
+  logoutUser
 }) => {
   return (
     <header className="premium-header">
@@ -37,6 +42,7 @@ export const Header: React.FC<HeaderProps> = ({
             value={activeTenantId} 
             onChange={(e) => setActiveTenantId(e.target.value)}
             className="tenant-select"
+            disabled={userType !== null} // Lock tenant dropdown in authenticated mode for isolation
           >
             {tenants.map(t => (
               <option key={t.id} value={t.id}>
@@ -64,13 +70,43 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="user-profile-badge">
-          <div className="avatar-ring">
-            <div className="avatar-inner">CG</div>
+          <div className="avatar-ring" style={{ borderColor: userType === 'SME' ? 'var(--accent-purple)' : 'var(--accent-lime)' }}>
+            <div className="avatar-inner" style={{ backgroundColor: userType === 'SME' ? 'var(--accent-purple)' : 'var(--accent-lime)' }}>
+              {userType === 'SME' ? 'DN' : 'HK'}
+            </div>
           </div>
           <div style={{ textAlign: 'left' }}>
-            <p style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', lineHeight: 1.1 }}>Chuyên gia Thuế</p>
-            <span style={{ fontSize: '10px', color: 'var(--accent-emerald)', fontWeight: 600 }}>Kế toán trưởng AI</span>
+            <p style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff', lineHeight: 1.1 }}>
+              {userType === 'SME' ? 'Doanh nghiệp (SME)' : 'Hộ kinh doanh'}
+            </p>
+            <span style={{ fontSize: '10px', color: 'var(--accent-emerald)', fontWeight: 600 }}>
+              {userType === 'SME' ? 'Chế độ TT133' : 'Chế độ TT88'}
+            </span>
           </div>
+          
+          {/* Logout Button */}
+          <button 
+            onClick={logoutUser}
+            title="Đăng xuất"
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#ff4444', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: '6px',
+              marginLeft: '12px',
+              borderRadius: '50%',
+              backgroundColor: 'rgba(255,68,68,0.05)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,68,68,0.15)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,68,68,0.05)')}
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </div>
     </header>

@@ -23,7 +23,54 @@ export interface ReportSummary {
 }
 
 export const useSmartTax = () => {
-  const [activeTenantId, setActiveTenantId] = useState<string>('t-001');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const raw = sessionStorage.getItem('smarttax_user_auth');
+      if (!raw) return false;
+      try {
+        const data = JSON.parse(raw);
+        if (data.authenticated && data.expiresAt > Date.now()) {
+          return true;
+        }
+        sessionStorage.removeItem('smarttax_user_auth');
+      } catch (e) {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  const [userType, setUserType] = useState<'SME' | 'HOUSEHOLD' | null>(() => {
+    if (typeof window !== 'undefined') {
+      const raw = sessionStorage.getItem('smarttax_user_auth');
+      if (!raw) return null;
+      try {
+        const data = JSON.parse(raw);
+        if (data.authenticated && data.expiresAt > Date.now()) {
+          return data.userType;
+        }
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  const [activeTenantId, setActiveTenantId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const raw = sessionStorage.getItem('smarttax_user_auth');
+      if (raw) {
+        try {
+          const data = JSON.parse(raw);
+          if (data.authenticated && data.expiresAt > Date.now()) {
+            return data.tenantId;
+          }
+        } catch (e) {}
+      }
+    }
+    return 't-001';
+  });
+
   const [activeTab, setActiveTab] = useState<string>('overview');
   
   const tenant = useMemo(() => {
@@ -267,6 +314,27 @@ export const useSmartTax = () => {
     }, 2000);
   }, [activeTenantId]);
 
+  const loginWithCredentials = useCallback((tenantId: string, role: 'SME' | 'HOUSEHOLD') => {
+    const sessionData = {
+      authenticated: true,
+      tenantId,
+      userType: role,
+      expiresAt: Date.now() + 60 * 60 * 1000 // 1 hour
+    };
+    sessionStorage.setItem('smarttax_user_auth', JSON.stringify(sessionData));
+    setActiveTenantId(tenantId);
+    setUserType(role);
+    setIsAuthenticated(true);
+  }, []);
+
+  const logoutUser = useCallback(() => {
+    sessionStorage.removeItem('smarttax_user_auth');
+    setIsAuthenticated(false);
+    setUserType(null);
+    setActiveTenantId('t-001');
+    setActiveTab('overview');
+  }, []);
+
   return {
     activeTenantId, setActiveTenantId,
     activeTab, setActiveTab,
@@ -295,6 +363,10 @@ export const useSmartTax = () => {
     handleRunAccountingAudit,
     handleFixAuditIssue,
     handleUploadAccountingFile,
-    handleSimulateGdtFiling
+    handleSimulateGdtFiling,
+    isAuthenticated,
+    userType,
+    loginWithCredentials,
+    logoutUser
   };
 };
