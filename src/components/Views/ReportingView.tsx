@@ -16,7 +16,8 @@ import {
   Check,
   AlertCircle,
   ArrowLeft,
-  FileDown
+  FileDown,
+  Database
 } from 'lucide-react';
 import type { Tenant, GdtReceipt } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
@@ -45,6 +46,15 @@ interface ReportingViewProps {
   gdtReceipt: GdtReceipt | null;
   setGdtReceipt: (receipt: GdtReceipt | null) => void;
   handleSimulateGdtFiling: () => void;
+
+  // Autopilot props
+  autopilotEnabled: boolean;
+  setAutopilotEnabled: (val: boolean) => void;
+  autopilotStatus: 'IDLE' | 'RUNNING' | 'COMPLETED';
+  autopilotLogs: string[];
+  showZaloNotification: boolean;
+  setShowZaloNotification: (val: boolean) => void;
+  handleRunAutopilotSimulation: () => void;
 }
 
 export const ReportingView: React.FC<ReportingViewProps> = ({
@@ -67,7 +77,14 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
   setFilingStatus,
   gdtReceipt,
   setGdtReceipt,
-  handleSimulateGdtFiling
+  handleSimulateGdtFiling,
+  autopilotEnabled,
+  setAutopilotEnabled,
+  autopilotStatus,
+  autopilotLogs,
+  showZaloNotification,
+  setShowZaloNotification,
+  handleRunAutopilotSimulation
 }) => {
   const ds = useDigitalSignature();
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +118,138 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
+      {/* AUTOPILOT ENGINE DASHBOARD */}
+      <div className="content-card" style={{ 
+        border: autopilotEnabled ? '1px solid var(--accent-purple)' : '1px solid rgba(255,255,255,0.05)',
+        background: 'linear-gradient(135deg, rgba(20,10,35,0.6) 0%, rgba(10,10,15,0.8) 100%)',
+        boxShadow: autopilotEnabled ? '0 0 25px rgba(157,0,255,0.15)' : 'none',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {autopilotEnabled && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '2px',
+            background: 'linear-gradient(90deg, #9d00ff, #00e599, #00e0ff)',
+            animation: 'pulse 2s infinite'
+          }}></div>
+        )}
+
+        <div className="flex-row-between" style={{ gap: '16px', flexWrap: 'wrap' }}>
+          <div className="flex-row-center" style={{ gap: '12px' }}>
+            <div style={{ 
+              width: '40px', 
+              height: '40px', 
+              borderRadius: '8px', 
+              backgroundColor: autopilotEnabled ? 'rgba(157,0,255,0.15)' : 'rgba(255,255,255,0.03)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}>
+              <RefreshCw size={20} color={autopilotEnabled ? 'var(--accent-purple)' : 'var(--text-muted)'} className={autopilotStatus === 'RUNNING' ? 'animate-spin' : ''} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>Chế độ Kê khai Thuế Tự trị (Autopilot Mode)</span>
+                <span className={`badge ${autopilotEnabled ? 'badge-purple' : 'badge-gray'}`} style={{ fontSize: '9px', padding: '2px 6px' }}>
+                  {autopilotEnabled ? 'ĐANG BẬT' : 'ĐANG TẮT'}
+                </span>
+              </h3>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                {autopilotEnabled 
+                  ? 'AI Chief Accountant đang vận hành ngầm: Tự động đối soát, kiểm toán, ký số Cloud HSM & nộp GDT.' 
+                  : 'Bật chế độ tự trị để Kế toán trưởng AI tự động hoàn tất toàn bộ nghĩa vụ thuế của doanh nghiệp.'}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <label className="switch" style={{ display: 'inline-block', width: '46px', height: '24px', position: 'relative', cursor: 'pointer' }}>
+              <input 
+                type="checkbox" 
+                checked={autopilotEnabled}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setFilingStep(1);
+                    setFilingStatus('DRAFT');
+                  }
+                  setAutopilotEnabled(e.target.checked);
+                }}
+                style={{ opacity: 0, width: 0, height: 0 }}
+              />
+              <span className="slider round" style={{
+                position: 'absolute',
+                cursor: 'pointer',
+                inset: 0,
+                backgroundColor: autopilotEnabled ? 'var(--accent-purple)' : 'rgba(255,255,255,0.1)',
+                transition: '.4s',
+                borderRadius: '34px',
+                boxShadow: autopilotEnabled ? '0 0 10px rgba(157,0,255,0.5)' : 'none'
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  content: '""',
+                  height: '18px',
+                  width: '18px',
+                  left: autopilotEnabled ? '24px' : '3px',
+                  bottom: '3px',
+                  backgroundColor: '#ffffff',
+                  transition: '.4s',
+                  borderRadius: '50%'
+                }}></span>
+              </span>
+            </label>
+
+            {autopilotEnabled && (
+              <button 
+                onClick={handleRunAutopilotSimulation}
+                disabled={autopilotStatus === 'RUNNING'}
+                className="btn-primary"
+                style={{ padding: '8px 16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Sparkles size={12} />
+                <span>Chạy giả lập chu kỳ nộp thuế</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {autopilotEnabled && (autopilotStatus === 'RUNNING' || autopilotLogs.length > 0) && (
+          <div className="animate-fade-in" style={{ marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>LOG TIẾN TRÌNH TỰ TRỊ (CRON WORKER):</span>
+              <span style={{ fontSize: '11px', color: autopilotStatus === 'RUNNING' ? 'var(--accent-purple)' : 'var(--accent-lime)', fontWeight: 800 }}>
+                {autopilotStatus === 'RUNNING' ? '● ĐANG XỬ LÝ...' : '✓ HOÀN THÀNH'}
+              </span>
+            </div>
+            
+            <div className="sync-log-container" style={{ 
+              maxHeight: '150px', 
+              backgroundColor: '#000000', 
+              border: '1px solid rgba(255,255,255,0.08)',
+              fontFamily: 'monospace',
+              fontSize: '11px'
+            }}>
+              {autopilotLogs.map((log, i) => (
+                <div key={i} className="sync-log-entry" style={{
+                  color: log.includes('Thành công') || log.includes('CHẤP NHẬN') ? 'var(--accent-lime)' : 
+                         log.includes('Khởi chạy') ? '#d4a6ff' : '#ffffff'
+                }}>
+                  <span className="sync-log-bullet" style={{
+                    backgroundColor: log.includes('Thành công') || log.includes('CHẤP NHẬN') ? 'var(--accent-lime)' : 
+                                     log.includes('Khởi chạy') ? 'var(--accent-purple)' : '#ffffff'
+                  }}></span>
+                  <span>{log}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* 4-STEP WIZARD PROGRESS BAR */}
       <div className="content-card" style={{ padding: '16px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
@@ -481,6 +630,15 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
                   <Sparkles size={14} color="#d4a6ff" />
                   <span style={{ color: '#d4a6ff' }}>Ký số bằng SmartCA (Remote Signing)</span>
                 </button>
+                <button 
+                  onClick={() => ds.requestToken('SMART_CA')}
+                  disabled={ds.isConnecting}
+                  className="btn-secondary" 
+                  style={{ width: '100%', justifyContent: 'center', padding: '12px', borderColor: 'rgba(0,224,255,0.2)' }}
+                >
+                  <Database size={14} color="var(--accent-cyan)" />
+                  <span style={{ color: 'var(--accent-cyan)' }}>Ký số không chạm Cloud HSM (Autopilot khuyên dùng)</span>
+                </button>
               </div>
             ) : (
               <div className="animate-fade-in">
@@ -747,6 +905,171 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
         </div>
       )}
 
+      {/* SMARTPHONE ZALO NOTIFICATION MODAL */}
+      {showZaloNotification && (
+        <div style={{ 
+          position: 'fixed', 
+          inset: 0, 
+          backgroundColor: 'rgba(0,0,0,0.8)', 
+          backdropFilter: 'blur(5px)', 
+          zIndex: 1000, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}>
+          <div className="animate-fade-in" style={{ 
+            width: '320px', 
+            height: '560px', 
+            borderRadius: '36px', 
+            border: '6px solid #222222', 
+            backgroundColor: '#070708', 
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5), 0 0 30px rgba(157,0,255,0.3)',
+            display: 'flex', 
+            flexDirection: 'column', 
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Phone notch */}
+            <div style={{ 
+              width: '120px', 
+              height: '18px', 
+              backgroundColor: '#222222', 
+              position: 'absolute', 
+              top: 0, 
+              left: '50%', 
+              transform: 'translateX(-50%)', 
+              borderBottomLeftRadius: '12px', 
+              borderBottomRightRadius: '12px',
+              zIndex: 10
+            }}></div>
+
+            {/* Phone status bar */}
+            <div style={{ 
+              padding: '12px 24px 4px', 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              fontSize: '10px', 
+              color: 'var(--text-secondary)',
+              backgroundColor: '#0c0d14',
+              zIndex: 2
+            }}>
+              <span>19:40</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <span>5G</span>
+                <span>100%</span>
+              </div>
+            </div>
+
+            {/* App Header (Zalo Style) */}
+            <div style={{ 
+              padding: '10px 16px', 
+              backgroundColor: '#0068ff', 
+              color: '#ffffff', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '12px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              <div style={{ 
+                width: '30px', 
+                height: '30px', 
+                borderRadius: '50%', 
+                backgroundColor: 'rgba(255,255,255,0.2)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontWeight: 'bold',
+                fontSize: '12px'
+              }}>S</div>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 'bold' }}>SmartTax AI Assistant</div>
+                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.8)' }}>Tin nhắn hệ thống tự động</div>
+              </div>
+            </div>
+
+            {/* Chat Body */}
+            <div style={{ 
+              flex: 1, 
+              padding: '12px', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '16px', 
+              overflowY: 'auto',
+              backgroundImage: 'radial-gradient(circle at center, #10111a 0%, #070708 100%)'
+            }}>
+              {/* Timestamp bubble */}
+              <div style={{ alignSelf: 'center', fontSize: '9px', color: 'var(--text-muted)', backgroundColor: 'rgba(255,255,255,0.02)', padding: '2px 8px', borderRadius: '10px' }}>
+                Hôm nay 19:40
+              </div>
+
+              {/* Chat Message Bubble */}
+              <div className="animate-fade-in" style={{ 
+                alignSelf: 'flex-start', 
+                maxWidth: '85%', 
+                backgroundColor: '#1b223c', 
+                border: '1px solid rgba(255,255,255,0.05)',
+                borderRadius: '0 16px 16px 16px', 
+                padding: '12px', 
+                color: '#ffffff',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+              }}>
+                <span style={{ fontSize: '11px', color: '#ffb300', fontWeight: 800, display: 'block', marginBottom: '6px' }}>
+                  📢 BÁO CÁO KÊ KHAI TỰ ĐỘNG
+                </span>
+                
+                <p style={{ fontSize: '11px', lineHeight: 1.4, margin: 0 }}>
+                  Kính gửi Quý khách <strong>{tenant.legalRepresentative}</strong>,<br />
+                  AI Kế toán trưởng SmartTax báo cáo kết quả kê khai tự trị kỳ nộp thuế này:<br /><br />
+                  • <strong>Tờ khai</strong>: {selectedDeclarationForm}<br />
+                  • <strong>Kỳ nộp</strong>: {generatedReportSummary?.periodText || 'Tháng 04/2026'}<br />
+                  • <strong>Phương thức ký</strong>: Ký số Cloud HSM (Từ xa)<br />
+                  • <strong>Trạng thái GDT</strong>: <span style={{ color: 'var(--accent-lime)', fontWeight: 800 }}>ĐÃ CHẤP NHẬN</span><br />
+                  • <strong>Mã biên nhận</strong>: BT-GDT-98218<br />
+                  • <strong>Nghĩa vụ thuế</strong>: <strong style={{ color: 'var(--accent-lime)' }}>{formatCurrency((generatedReportSummary?.payableVat || 0) + (generatedReportSummary?.payableCitOrPit || 0))}</strong><br /><br />
+                  Sổ cái của bạn đã được kiểm toán & đối soát khớp 100% dòng tiền ngân hàng Techcombank. 
+                </p>
+                
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <button 
+                    onClick={() => {
+                      setShowZaloNotification(false);
+                      setFilingStep(4);
+                    }}
+                    style={{ width: '100%', padding: '6px', backgroundColor: '#0068ff', border: 'none', borderRadius: '4px', color: '#ffffff', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    Xem Biên nhận GDT chi tiết
+                  </button>
+                  <button 
+                    onClick={handleDownloadXml}
+                    style={{ width: '100%', padding: '6px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', color: 'var(--text-secondary)', fontSize: '9px', cursor: 'pointer' }}
+                  >
+                    Tải Tệp tờ khai XML
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Close Phone View Button */}
+            <div style={{ 
+              padding: '10px 16px', 
+              backgroundColor: '#0c0d14', 
+              borderTop: '1px solid rgba(255,255,255,0.05)', 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center' 
+            }}>
+              <button 
+                onClick={() => setShowZaloNotification(false)}
+                className="btn-secondary" 
+                style={{ padding: '6px 20px', fontSize: '10px', borderRadius: '20px' }}
+              >
+                Đóng màn hình điện thoại
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

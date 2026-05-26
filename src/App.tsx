@@ -59,7 +59,26 @@ export default function App() {
     isAuthenticated,
     userType,
     loginWithCredentials,
-    logoutUser
+    logoutUser,
+    payrollEmployees,
+    internalControlStatus,
+    internalControlIssues,
+    handleRunInternalControlScan,
+    handleApplyPayrollOptimization,
+    handleInjectCashLoan,
+    handleExcludeBlacklistInvoice,
+    bankFileName,
+    bankTransactions,
+    bankReconStatus,
+    handleUploadBankStatement,
+    handleAutoMatchBankTransactions,
+    autopilotEnabled,
+    setAutopilotEnabled,
+    autopilotStatus,
+    autopilotLogs,
+    showZaloNotification,
+    setShowZaloNotification,
+    handleRunAutopilotSimulation
   } = smartTax;
 
   // Derived data
@@ -337,6 +356,11 @@ export default function App() {
               accountingAuditStatus={accountingAuditStatus}
               trialBalanceData={trialBalanceData}
               handleUploadAccountingFile={handleUploadAccountingFile}
+              bankFileName={bankFileName}
+              bankTransactions={bankTransactions}
+              bankReconStatus={bankReconStatus}
+              handleUploadBankStatement={handleUploadBankStatement}
+              handleAutoMatchBankTransactions={handleAutoMatchBankTransactions}
             />
           )}
 
@@ -358,6 +382,13 @@ export default function App() {
               alerts={MOCK_ALERTS}
               riskFilter={riskFilter}
               setRiskFilter={setRiskFilter}
+              payrollEmployees={payrollEmployees}
+              internalControlStatus={internalControlStatus}
+              internalControlIssues={internalControlIssues}
+              handleRunInternalControlScan={handleRunInternalControlScan}
+              handleApplyPayrollOptimization={handleApplyPayrollOptimization}
+              handleInjectCashLoan={handleInjectCashLoan}
+              handleExcludeBlacklistInvoice={handleExcludeBlacklistInvoice}
             />
           )}
 
@@ -383,6 +414,13 @@ export default function App() {
               gdtReceipt={gdtReceipt}
               setGdtReceipt={setGdtReceipt}
               handleSimulateGdtFiling={handleSimulateGdtFiling}
+              autopilotEnabled={autopilotEnabled}
+              setAutopilotEnabled={setAutopilotEnabled}
+              autopilotStatus={autopilotStatus}
+              autopilotLogs={autopilotLogs}
+              showZaloNotification={showZaloNotification}
+              setShowZaloNotification={setShowZaloNotification}
+              handleRunAutopilotSimulation={handleRunAutopilotSimulation}
             />
           )}
 

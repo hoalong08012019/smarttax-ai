@@ -11,7 +11,7 @@ import {
   Sparkles,
   Info
 } from 'lucide-react';
-import type { Invoice, TrialBalanceItem } from '../../mockData';
+import type { Invoice, TrialBalanceItem, BankTransaction } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
 
 interface SyncViewProps {
@@ -28,6 +28,13 @@ interface SyncViewProps {
   accountingAuditStatus: 'IDLE' | 'AUDITING' | 'COMPLETED';
   trialBalanceData: TrialBalanceItem[];
   handleUploadAccountingFile: (name: string) => void;
+
+  // Props for Bank Reconciliation
+  bankFileName: string | null;
+  bankTransactions: BankTransaction[];
+  bankReconStatus: 'IDLE' | 'MATCHING' | 'COMPLETED';
+  handleUploadBankStatement: (name: string) => void;
+  handleAutoMatchBankTransactions: () => void;
 }
 
 export const SyncView: React.FC<SyncViewProps> = ({
@@ -41,16 +48,30 @@ export const SyncView: React.FC<SyncViewProps> = ({
   accountingFileName,
   accountingAuditStatus,
   trialBalanceData,
-  handleUploadAccountingFile
+  handleUploadAccountingFile,
+  bankFileName,
+  bankTransactions,
+  bankReconStatus,
+  handleUploadBankStatement,
+  handleAutoMatchBankTransactions
 }) => {
-  const [subTab, setSubTab] = useState<'invoices' | 'accounting'>('invoices');
+  const [subTab, setSubTab] = useState<'invoices' | 'accounting' | 'bank'>('invoices');
   const [isUploadingLedger, setIsUploadingLedger] = useState(false);
+  const [isUploadingBank, setIsUploadingBank] = useState(false);
 
   const handleSimulateLedgerUpload = (fileName: string) => {
     setIsUploadingLedger(true);
     setTimeout(() => {
       handleUploadAccountingFile(fileName);
       setIsUploadingLedger(false);
+    }, 1500);
+  };
+
+  const handleSimulateBankUpload = (fileName: string) => {
+    setIsUploadingBank(true);
+    setTimeout(() => {
+      handleUploadBankStatement(fileName);
+      setIsUploadingBank(false);
     }, 1500);
   };
 
@@ -73,6 +94,14 @@ export const SyncView: React.FC<SyncViewProps> = ({
         >
           <FileSpreadsheet size={14} />
           <span>Nạp Dữ liệu Sổ sách Kế toán</span>
+        </button>
+        <button 
+          onClick={() => setSubTab('bank')}
+          className={`btn-secondary ${subTab === 'bank' ? 'active' : ''}`}
+          style={{ padding: '10px 24px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', borderColor: subTab === 'bank' ? 'var(--accent-purple)' : 'rgba(157,0,255,0.2)' }}
+        >
+          <Database size={14} color={subTab === 'bank' ? '' : '#d4a6ff'} />
+          <span style={{ color: subTab === 'bank' ? '' : '#d4a6ff' }}>Đối chiếu Sao kê Ngân hàng</span>
         </button>
       </div>
 
@@ -191,7 +220,7 @@ export const SyncView: React.FC<SyncViewProps> = ({
             </div>
           </div>
         </div>
-      ) : (
+      ) : subTab === 'accounting' ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '24px' }}>
           {/* UPLOAD LEDGER COLUMN */}
           <div className="content-card">
@@ -338,6 +367,188 @@ export const SyncView: React.FC<SyncViewProps> = ({
                 <Layers size={48} style={{ marginBottom: '16px' }} />
                 <p style={{ fontSize: '13px', fontWeight: 500 }}>Chưa nạp tệp báo cáo tài chính / số dư tài khoản</p>
                 <p style={{ fontSize: '11px', textAlign: 'center', maxWidth: '280px', marginTop: '6px' }}>Vui lòng nạp tệp Excel số liệu kế toán ở cột bên trái để AI trích xuất bảng cân đối.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '24px' }}>
+          {/* UPLOAD BANK COLUMN */}
+          <div className="content-card">
+            <div className="flex-row-center" style={{ gap: '10px', marginBottom: '20px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(0,224,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Database size={18} color="var(--accent-cyan)" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Nạp Sao kê Ngân hàng</h3>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>AI tự động đối soát dòng tiền biến động với hóa đơn</p>
+              </div>
+            </div>
+
+            <div className="upload-zone" style={{ borderStyle: isUploadingBank || bankReconStatus === 'MATCHING' ? 'solid' : 'dashed', height: '260px' }}>
+              {!bankFileName && !isUploadingBank ? (
+                <div style={{ textAlign: 'center' }}>
+                  <Download size={36} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
+                  <p style={{ fontSize: '14px', color: '#ffffff', fontWeight: 700, marginBottom: '6px' }}>Tải lên file Sao kê tài khoản Ngân hàng</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '20px' }}>Hỗ trợ tệp XLS, XLSX, CSV xuất từ eBanking</p>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '280px', margin: '0 auto' }}>
+                    <button 
+                      onClick={() => handleSimulateBankUpload('SAO_KE_TECHCOMBANK_T4_2026.xlsx')} 
+                      className="btn-secondary"
+                      style={{ fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderColor: 'rgba(0,224,255,0.3)' }}
+                    >
+                      <Sparkles size={12} color="var(--accent-cyan)" />
+                      <span>Nạp sao kê Techcombank Demo</span>
+                    </button>
+                  </div>
+                </div>
+              ) : isUploadingBank ? (
+                <div style={{ textAlign: 'center' }}>
+                  <div className="animate-spin" style={{ marginBottom: '16px' }}>
+                    <RefreshCw size={36} color="var(--accent-cyan)" />
+                  </div>
+                  <p style={{ fontSize: '14px', color: 'var(--accent-cyan)', fontWeight: 800 }}>AI đang phân tích các dòng tiền...</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Trích xuất thông tin người chuyển, số tiền & ngày giao dịch</p>
+                </div>
+              ) : (
+                <div className="animate-fade-in" style={{ textAlign: 'center' }}>
+                  <CheckCircle2 size={36} color="var(--accent-emerald)" style={{ marginBottom: '12px' }} />
+                  <p style={{ fontSize: '14px', color: 'var(--accent-emerald)', fontWeight: 800, marginBottom: '4px' }}>Nạp sao kê thành công!</p>
+                  <p style={{ fontSize: '12px', color: '#ffffff', fontWeight: 600, wordBreak: 'break-all' }}>Tệp: {bankFileName}</p>
+                  
+                  <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.03)', fontSize: '10px', color: 'var(--text-muted)' }}>
+                      Giao dịch: <strong style={{ color: '#ffffff' }}>{bankTransactions.length}</strong>
+                    </div>
+                    <div style={{ padding: '4px 8px', borderRadius: '4px', backgroundColor: bankReconStatus === 'COMPLETED' ? 'rgba(0,229,153,0.05)' : 'rgba(255,204,0,0.05)', fontSize: '10px', color: bankReconStatus === 'COMPLETED' ? 'var(--accent-lime)' : 'var(--accent-amber)' }}>
+                      Trạng thái: <strong>{bankReconStatus === 'COMPLETED' ? 'ĐÃ KHỚP' : 'CHƯA ĐỐI CHIẾU'}</strong>
+                    </div>
+                  </div>
+
+                  {bankReconStatus === 'IDLE' && (
+                    <button 
+                      onClick={handleAutoMatchBankTransactions}
+                      className="btn-primary"
+                      style={{ width: '100%', marginTop: '16px', justifyContent: 'center', padding: '10px', display: 'flex', gap: '6px' }}
+                    >
+                      <Sparkles size={14} />
+                      <span>Khớp Dòng Tiền & Hạch Toán</span>
+                    </button>
+                  )}
+
+                  {bankReconStatus === 'MATCHING' && (
+                    <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: 'var(--accent-purple)' }}>
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span style={{ fontSize: '11px', fontWeight: 700 }}>AI đang chạy đối chiếu và ghi sổ...</span>
+                    </div>
+                  )}
+
+                  {bankReconStatus === 'COMPLETED' && (
+                    <div style={{ marginTop: '16px', padding: '8px', borderRadius: '6px', backgroundColor: 'rgba(0,229,153,0.05)', border: '1px solid rgba(0,229,153,0.1)', fontSize: '11px', color: 'var(--accent-lime)', fontWeight: 600 }}>
+                      ✓ Đã tự động hạch toán tất cả giao dịch vào Sổ Nhật ký chung!
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={() => handleUploadBankStatement('RESET')}
+                    style={{ width: '100%', marginTop: '12px', background: 'none', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-muted)', fontSize: '10px', padding: '6px', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    Tải file khác
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            <div style={{ marginTop: '20px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', gap: '10px' }}>
+              <Info size={16} color="var(--accent-cyan)" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                <strong>Cách thức hoạt động:</strong> AI Bookkeeper trích xuất mã số thuế, số tiền, tên đối tác trong sao kê ngân hàng và đối chiếu với danh sách hóa đơn điện tử GDT để tự khớp công nợ (TK 131, 331). Đối với các giao dịch phí ngân hàng, AI tự động hạch toán vào chi phí quản lý (TK 6425).
+              </p>
+            </div>
+          </div>
+
+          {/* BANK TRANSACTION TABLE COLUMN */}
+          <div className="content-card" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="flex-row-between" style={{ marginBottom: '16px' }}>
+              <div className="flex-row-center" style={{ gap: '10px' }}>
+                <Database size={18} color="var(--accent-cyan)" />
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Chi tiết Sao kê dòng tiền Ngân hàng</h3>
+              </div>
+              {bankFileName && (
+                <span className={`badge ${bankReconStatus === 'COMPLETED' ? 'badge-lime' : 'badge-amber'}`}>
+                  {bankReconStatus === 'COMPLETED' ? 'ĐÃ ĐỐI CHIẾU' : 'CHƯA ĐỐI CHIẾU'}
+                </span>
+              )}
+            </div>
+
+            {bankFileName ? (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, overflowY: 'auto', maxHeight: '310px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left' }}>
+                        <th style={{ padding: '8px' }}>Ngày</th>
+                        <th style={{ padding: '8px' }}>Nội dung chi tiết</th>
+                        <th style={{ padding: '8px', textAlign: 'right' }}>Số tiền</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>Trạng thái khớp</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bankTransactions.map((tx) => (
+                        <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                          <td style={{ padding: '8px', whiteSpace: 'nowrap' }}>{tx.date}</td>
+                          <td style={{ padding: '8px', color: '#ffffff', fontWeight: 500 }}>
+                            <div style={{ wordBreak: 'break-word' }}>{tx.description}</div>
+                            {tx.matchStatus !== 'MATCHED' && tx.suggestedLedgerEntry && (
+                              <div style={{ fontSize: '9px', color: '#d4a6ff', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'rgba(157,0,255,0.05)', padding: '2px 6px', borderRadius: '4px', width: 'fit-content' }}>
+                                <Sparkles size={10} />
+                                <span>AI gợi ý: Nợ {tx.suggestedLedgerEntry.debitAccount} / Có {tx.suggestedLedgerEntry.creditAccount}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: tx.type === 'DEPOSIT' ? 'var(--accent-lime)' : '#ffffff' }}>
+                            {tx.type === 'DEPOSIT' ? '+' : '-'}{formatCurrency(tx.amount)}
+                          </td>
+                          <td style={{ padding: '8px', textAlign: 'center' }}>
+                            {tx.matchStatus === 'MATCHED' ? (
+                              <span style={{ color: 'var(--accent-emerald)', fontWeight: 700, fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                <CheckCircle2 size={12} /> Khớp
+                              </span>
+                            ) : tx.matchStatus === 'SUGGESTED' ? (
+                              <span className="badge badge-amber" style={{ fontSize: '9px', padding: '2px 6px' }}>Gợi ý khớp</span>
+                            ) : (
+                              <span className="badge badge-red" style={{ fontSize: '9px', padding: '2px 6px' }}>Lệch</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div style={{ padding: '10px', borderRadius: '8px', backgroundColor: 'rgba(0,224,255,0.03)', border: '1px solid rgba(0,224,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                    <span>Số dư đối soát ngân hàng khớp 100% hóa đơn.</span>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const btn = document.querySelector('button[data-tab="reporting"]');
+                      if (btn) (btn as HTMLButtonElement).click();
+                    }}
+                    className="btn-secondary" 
+                    style={{ padding: '4px 10px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <span>Lập Tờ Khai Thuế</span>
+                    <ArrowRight size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', opacity: 0.3, border: '1px dashed rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+                <Layers size={48} style={{ marginBottom: '16px' }} />
+                <p style={{ fontSize: '13px', fontWeight: 500 }}>Chưa nạp tệp sao kê ngân hàng</p>
+                <p style={{ fontSize: '11px', textAlign: 'center', maxWidth: '280px', marginTop: '6px' }}>Vui lòng nạp tệp Excel sao kê dòng tiền ở cột bên trái để AI chạy đối soát tự động.</p>
               </div>
             )}
           </div>

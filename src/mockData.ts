@@ -122,6 +122,35 @@ export interface GdtReceipt {
   acceptanceMessage: string;
 }
 
+export interface PayrollEmployee {
+  id: string;
+  name: string;
+  role: string;
+  contractStatus: 'SIGNED' | 'UNSIGNED';
+  taxCodeStatus: 'REGISTERED' | 'UNREGISTERED';
+  baseSalary: number;
+  allowances: {
+    clothing: number;
+    lunch: number;
+    telephone: number;
+    other: number;
+  };
+  optimized: boolean;
+}
+
+export interface InternalControlIssue {
+  id: string;
+  category: 'CASH_STOCK' | 'PAYROLL' | 'BLACKLIST';
+  level: 'CRITICAL' | 'WARNING' | 'INFO';
+  title: string;
+  description: string;
+  lawBasis: string;
+  affectedValue: number;
+  status: 'ACTIVE' | 'RESOLVED';
+  autoFixText: string;
+  invoiceId?: string;
+}
+
 export const MOCK_TENANTS: Tenant[] = [
   {
     id: 't-001',
@@ -857,4 +886,211 @@ export const MOCK_GDT_RECEIPTS: Record<string, GdtReceipt> = {
     acceptanceMessage: 'Thông báo số 18840/TB-TCT: Tổng cục Thuế Việt Nam thông báo chấp nhận Hồ sơ khai thuế điện tử của NNT. Hồ sơ hợp lệ và đã ghi nhận nghĩa vụ thuế phải nộp (1.5% GTGT + 0.5% TNCN) vào NSNN.'
   }
 };
+
+export const MOCK_GDT_BLACKLIST: string[] = ['0315556677', '0104445556'];
+
+export const MOCK_PAYROLL_EMPLOYEES: PayrollEmployee[] = [
+  {
+    id: 'emp-001',
+    name: 'Nguyễn Văn Long',
+    role: 'Giám Đốc Điều Hành',
+    contractStatus: 'SIGNED',
+    taxCodeStatus: 'REGISTERED',
+    baseSalary: 28000000,
+    allowances: { clothing: 0, lunch: 0, telephone: 0, other: 0 },
+    optimized: false
+  },
+  {
+    id: 'emp-002',
+    name: 'Trần Thị Thu thảo',
+    role: 'Lập trình viên Senior',
+    contractStatus: 'SIGNED',
+    taxCodeStatus: 'REGISTERED',
+    baseSalary: 22000000,
+    allowances: { clothing: 0, lunch: 0, telephone: 0, other: 0 },
+    optimized: false
+  },
+  {
+    id: 'emp-003',
+    name: 'Phạm Minh Đức',
+    role: 'Nhân viên Thử việc CNTT',
+    contractStatus: 'UNSIGNED',
+    taxCodeStatus: 'UNREGISTERED',
+    baseSalary: 8500000,
+    allowances: { clothing: 0, lunch: 0, telephone: 0, other: 0 },
+    optimized: false
+  }
+];
+
+export const MOCK_INTERNAL_CONTROL_ISSUES_TT133: InternalControlIssue[] = [
+  {
+    id: 'ic-101',
+    category: 'CASH_STOCK',
+    level: 'CRITICAL',
+    title: 'Phát hiện thâm hụt số dư quỹ tiền mặt (Âm quỹ lý thuyết)',
+    description: 'Số dư Tiền mặt Việt Nam Đồng (TK 1111) bị âm -12,800,000 VND sau bút toán hạch toán mua sắm thiết bị văn phòng. Kê khai sổ sách có quỹ tiền mặt âm là sai phạm kế toán nghiêm trọng, sẽ bị cơ quan thuế bác bỏ sổ sách và ấn định thuế.',
+    lawBasis: 'Điều 14 Thông tư 133/2016/TT-BTC & Luật Kế toán số 88/2015/QH13',
+    affectedValue: 12800000,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động sửa: Tạo hợp đồng vay cá nhân không lãi suất (UNC 3411) để bù đắp quỹ mặt 50,000,000 VND'
+  },
+  {
+    id: 'ic-102',
+    category: 'PAYROLL',
+    level: 'WARNING',
+    title: 'Rủi ro bảo hiểm & thuế TNCN: Thiếu hợp đồng và MST nhân viên thử việc',
+    description: 'Nhân viên Phạm Minh Đức (Lương: 8,500,000 VND) chưa đăng ký MST cá nhân và chưa có hợp đồng lao động ký kết, nhưng vẫn được hạch toán chi phí lương vào TK 6422. Chi phí này có nguy cơ bị loại trừ 100% khi quyết toán thuế TNDN.',
+    lawBasis: 'Điều 4 Thông tư 96/2015/TT-BTC & Điều 25 Thông tư 111/2013/TT-BTC',
+    affectedValue: 8500000,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động sửa: Cơ cấu lại lương (tách phụ cấp trang phục & điện thoại miễn thuế) và tạo tờ khai đăng ký MST nhanh'
+  },
+  {
+    id: 'ic-103',
+    category: 'BLACKLIST',
+    level: 'CRITICAL',
+    title: 'Hóa đơn đầu vào mua quảng cáo thuộc danh nghiệp rủi ro cao (GDT Blacklist)',
+    description: 'Hóa đơn số 00005220 phát sinh giao dịch 120,000,000 VND do doanh nghiệp MST 0104445556 (Công ty Đầu tư Thiết bị Văn phòng Cao Cấp) xuất bản. Doanh nghiệp này nằm trong danh sách đen cảnh báo trốn thuế/bán hóa đơn khống của Tổng cục Thuế.',
+    lawBasis: 'Công văn số 2524/TCT-TTKT của Tổng cục Thuế về hóa đơn rủi ro',
+    affectedValue: 120000000,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động loại bỏ hóa đơn khỏi Tờ khai GTGT khấu trừ và đưa vào Chi phí không được trừ',
+    invoiceId: 'inv-ocr-' // Will match with OCR demo file
+  }
+];
+
+export const MOCK_INTERNAL_CONTROL_ISSUES_TT88: InternalControlIssue[] = [
+  {
+    id: 'ic-201',
+    category: 'CASH_STOCK',
+    level: 'CRITICAL',
+    title: 'Cảnh báo âm quỹ tiền mặt trên Sổ S1 (Sổ chi tiết doanh thu & quỹ)',
+    description: 'Phát hiện số dư tiền mặt tại quỹ của hộ kinh doanh bị âm -4,200,000 VND sau khi chi trả lương nhân công thuê ngoài bốc vác hàng hóa.',
+    lawBasis: 'Chế độ sổ sách ban hành kèm theo Thông tư 88/2021/TT-BTC',
+    affectedValue: 4200000,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động sửa: Lập phiếu thu bổ sung vốn góp cá nhân của chủ hộ kinh doanh trị giá 10,000,000 VND'
+  },
+  {
+    id: 'ic-202',
+    category: 'PAYROLL',
+    level: 'WARNING',
+    title: 'Bảng lương hộ kinh doanh chưa được tối ưu hóa thuế',
+    description: 'Toàn bộ lương nhân viên đang được chi trả dưới dạng lương cứng 100%, chưa tối ưu hóa các khoản trợ cấp ăn trưa và phụ cấp trang phục để được miễn trừ thuế TNCN theo chế độ kê khai trực tiếp.',
+    lawBasis: 'Thông tư 40/2021/TT-BTC & Thông tư 111/2013/TT-BTC',
+    affectedValue: 6000000,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động sửa: Thiết lập cơ cấu phụ cấp ăn trưa tối đa 730,000đ/tháng và trang phục 5,000,000đ/năm'
+  }
+];
+
+export interface BankTransaction {
+  id: string;
+  date: string;
+  referenceNumber: string;
+  description: string;
+  amount: number;
+  type: 'DEPOSIT' | 'WITHDRAWAL';
+  matchStatus: 'UNMATCHED' | 'MATCHED' | 'SUGGESTED';
+  suggestedLedgerEntry?: {
+    debitAccount: string;
+    creditAccount: string;
+    description: string;
+    invoiceNumber?: string;
+  };
+}
+
+export const MOCK_BANK_TRANSACTIONS_TT133: BankTransaction[] = [
+  {
+    id: 'bt-101',
+    date: '13/05/2026',
+    referenceNumber: 'FT261330928301',
+    description: 'CO PHAN BDS VINH QUANG THANH TOAN HIEU LUONG HD00000105',
+    amount: 165000000,
+    type: 'DEPOSIT',
+    matchStatus: 'SUGGESTED',
+    suggestedLedgerEntry: {
+      debitAccount: '1121',
+      creditAccount: '131',
+      description: 'Nhận tiền gửi ngân hàng thanh toán cho Hóa đơn số 00000105 (BDS Vinh Quang)',
+      invoiceNumber: '00000105'
+    }
+  },
+  {
+    id: 'bt-102',
+    date: '11/05/2026',
+    referenceNumber: 'FT261310029381',
+    description: 'UNC-4921 CHUYEN TIEN TT TIEN INTERNET FPT TELECOM',
+    amount: 13200000,
+    type: 'WITHDRAWAL',
+    matchStatus: 'SUGGESTED',
+    suggestedLedgerEntry: {
+      debitAccount: '331',
+      creditAccount: '1121',
+      description: 'Chuyển khoản thanh toán tiền cước Internet FPT theo HĐ 00004921',
+      invoiceNumber: '00004921'
+    }
+  },
+  {
+    id: 'bt-103',
+    date: '10/05/2026',
+    referenceNumber: 'FT261300084321',
+    description: 'TECHCOMBANK - PHI QUAN LY DIEN TU VA DUY TRI DICH VU THANG 04',
+    amount: 110000,
+    type: 'WITHDRAWAL',
+    matchStatus: 'SUGGESTED',
+    suggestedLedgerEntry: {
+      debitAccount: '6425',
+      creditAccount: '1121',
+      description: 'Phí dịch vụ tài khoản quản lý điện tử Techcombank Tháng 04/2026'
+    }
+  },
+  {
+    id: 'bt-104',
+    date: '08/05/2026',
+    referenceNumber: 'FT261280982736',
+    description: 'NGUYEN VAN LONG CHUYEN TIEN TAM UNG HD KINH DOANH',
+    amount: 50000000,
+    type: 'DEPOSIT',
+    matchStatus: 'UNMATCHED',
+    suggestedLedgerEntry: {
+      debitAccount: '1121',
+      creditAccount: '3411',
+      description: 'Nhận tiền vay cá nhân Nguyễn Văn Long bổ sung vốn lưu động ngân hàng'
+    }
+  }
+];
+
+export const MOCK_BANK_TRANSACTIONS_TT88: BankTransaction[] = [
+  {
+    id: 'bt-201',
+    date: '12/05/2026',
+    referenceNumber: 'FT261320921102',
+    description: 'AN BINH SHOP CHUYEN KHOAN THANH TOAN TIEN MUA HANG',
+    amount: 5500000,
+    type: 'DEPOSIT',
+    matchStatus: 'SUGGESTED',
+    suggestedLedgerEntry: {
+      debitAccount: 'Sổ S1',
+      creditAccount: 'Sổ S2',
+      description: 'Nhận tiền chuyển khoản thanh toán mua hàng của An Bình Shop',
+      invoiceNumber: '00005520'
+    }
+  },
+  {
+    id: 'bt-202',
+    date: '10/05/2026',
+    referenceNumber: 'FT261300029311',
+    description: 'TECHCOMBANK SMS BAN KING FEE',
+    amount: 22000,
+    type: 'WITHDRAWAL',
+    matchStatus: 'SUGGESTED',
+    suggestedLedgerEntry: {
+      debitAccount: 'Sổ chi phí',
+      creditAccount: 'Sổ S1',
+      description: 'Phí dịch vụ biến động số dư SMS Banking ngân hàng Techcombank'
+    }
+  }
+];
+
 

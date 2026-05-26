@@ -7,9 +7,14 @@ import {
   MOCK_AUDIT_ISSUES_TT88,
   MOCK_TRIAL_BALANCE_TT133,
   MOCK_TRIAL_BALANCE_TT88,
-  MOCK_GDT_RECEIPTS
+  MOCK_GDT_RECEIPTS,
+  MOCK_PAYROLL_EMPLOYEES,
+  MOCK_INTERNAL_CONTROL_ISSUES_TT133,
+  MOCK_INTERNAL_CONTROL_ISSUES_TT88,
+  MOCK_BANK_TRANSACTIONS_TT133,
+  MOCK_BANK_TRANSACTIONS_TT88
 } from '../mockData';
-import type { Invoice, JournalEntry, AccountingAuditIssue, TrialBalanceItem, GdtReceipt } from '../mockData';
+import type { Invoice, JournalEntry, AccountingAuditIssue, TrialBalanceItem, GdtReceipt, PayrollEmployee, InternalControlIssue, BankTransaction } from '../mockData';
 
 
 export interface ReportSummary {
@@ -88,6 +93,22 @@ export const useSmartTax = () => {
   const [filingStatus, setFilingStatus] = useState<'DRAFT' | 'SIGNED' | 'SUBMITTED' | 'ACCEPTED'>('DRAFT');
   const [gdtReceipt, setGdtReceipt] = useState<GdtReceipt | null>(null);
 
+  // AI Chief Accountant Internal Control states
+  const [payrollEmployees, setPayrollEmployees] = useState<PayrollEmployee[]>(MOCK_PAYROLL_EMPLOYEES);
+  const [internalControlStatus, setInternalControlStatus] = useState<'IDLE' | 'SCANNING' | 'COMPLETED'>('IDLE');
+  const [internalControlIssues, setInternalControlIssues] = useState<InternalControlIssue[]>([]);
+
+  // Bank reconciliation states
+  const [bankFileName, setBankFileName] = useState<string | null>(null);
+  const [bankTransactions, setBankTransactions] = useState<BankTransaction[]>([]);
+  const [bankReconStatus, setBankReconStatus] = useState<'IDLE' | 'MATCHING' | 'COMPLETED'>('IDLE');
+
+  // Autopilot states
+  const [autopilotEnabled, setAutopilotEnabled] = useState<boolean>(false);
+  const [autopilotStatus, setAutopilotStatus] = useState<'IDLE' | 'RUNNING' | 'COMPLETED'>('IDLE');
+  const [autopilotLogs, setAutopilotLogs] = useState<string[]>([]);
+  const [showZaloNotification, setShowZaloNotification] = useState<boolean>(false);
+
   // Reset certain states when tenant changes for data isolation
   useEffect(() => {
     setSyncLog([
@@ -105,6 +126,17 @@ export const useSmartTax = () => {
     setFilingStep(1);
     setFilingStatus('DRAFT');
     setGdtReceipt(null);
+
+    setPayrollEmployees(MOCK_PAYROLL_EMPLOYEES);
+    setInternalControlStatus('IDLE');
+    setInternalControlIssues([]);
+
+    setBankFileName(null);
+    setBankTransactions([]);
+    setBankReconStatus('IDLE');
+    setAutopilotStatus('IDLE');
+    setAutopilotLogs([]);
+    setShowZaloNotification(false);
   }, [activeTenantId]);
 
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -335,6 +367,256 @@ export const useSmartTax = () => {
     setActiveTab('overview');
   }, []);
 
+  const handleRunInternalControlScan = useCallback(() => {
+    setInternalControlStatus('SCANNING');
+    setTimeout(() => {
+      if (tenant.accountingRegime === 'TT133') {
+        setInternalControlIssues(MOCK_INTERNAL_CONTROL_ISSUES_TT133);
+      } else {
+        setInternalControlIssues(MOCK_INTERNAL_CONTROL_ISSUES_TT88);
+      }
+      setInternalControlStatus('COMPLETED');
+    }, 1500);
+  }, [tenant.accountingRegime]);
+
+  const handleApplyPayrollOptimization = useCallback(() => {
+    setPayrollEmployees(prev => prev.map(emp => {
+      if (emp.id === 'emp-001') {
+        return {
+          ...emp,
+          baseSalary: 22000000,
+          allowances: { clothing: 416000, lunch: 730000, telephone: 300000, other: 4554000 },
+          optimized: true
+        };
+      }
+      if (emp.id === 'emp-002') {
+        return {
+          ...emp,
+          baseSalary: 17000000,
+          allowances: { clothing: 416000, lunch: 730000, telephone: 300000, other: 3554000 },
+          optimized: true
+        };
+      }
+      if (emp.id === 'emp-003') {
+        return {
+          ...emp,
+          baseSalary: 7054000,
+          allowances: { clothing: 416000, lunch: 730000, telephone: 300000, other: 0 },
+          contractStatus: 'SIGNED' as const,
+          taxCodeStatus: 'REGISTERED' as const,
+          optimized: true
+        };
+      }
+      return emp;
+    }));
+
+    setInternalControlIssues(prev => prev.map(issue => {
+      if (issue.category === 'PAYROLL') {
+        return { ...issue, status: 'RESOLVED' as const };
+      }
+      return issue;
+    }));
+  }, []);
+
+  const handleInjectCashLoan = useCallback(() => {
+    const loanAmount = tenant.accountingRegime === 'TT133' ? 50000000 : 10000000;
+    
+    // Add loan transaction to general ledger journals
+    const loanEntry: JournalEntry = {
+      id: `je-loan-${Date.now()}`,
+      date: new Date().toLocaleDateString('vi-VN'),
+      voucherCode: tenant.accountingRegime === 'TT133' ? 'UNC-3411' : 'PT-LOAN',
+      description: tenant.accountingRegime === 'TT133' 
+        ? 'Hạch toán vay cá nhân không lãi suất bổ sung quỹ tiền mặt (AI Inject)' 
+        : 'Phiếu thu bổ sung vốn góp cá nhân chủ hộ kinh doanh (AI Inject)',
+      debitAccount: tenant.accountingRegime === 'TT133' ? '1111' : 'Sổ S1',
+      creditAccount: tenant.accountingRegime === 'TT133' ? '3411' : 'Sổ S4',
+      amount: loanAmount,
+      isAutomated: true
+    };
+
+    setLocalJournals(prev => ({
+      ...prev,
+      [activeTenantId]: [loanEntry, ...(prev[activeTenantId] || [])]
+    }));
+
+    // Adjust Trial Balance Data
+    setTrialBalanceData(prev => prev.map(item => {
+      if (item.accountNumber === '1111' || item.accountNumber === 'Sổ S1') {
+        return {
+          ...item,
+          periodDebit: item.periodDebit + loanAmount,
+          closingDebit: item.closingDebit + loanAmount
+        };
+      }
+      return item;
+    }));
+
+    setInternalControlIssues(prev => prev.map(issue => {
+      if (issue.id === 'ic-101' || issue.id === 'ic-201') {
+        return { ...issue, status: 'RESOLVED' as const };
+      }
+      return issue;
+    }));
+  }, [activeTenantId, tenant.accountingRegime]);
+
+  const handleExcludeBlacklistInvoice = useCallback((issueId: string) => {
+    setInternalControlIssues(prev => prev.map(issue => {
+      if (issue.id === issueId) {
+        return { ...issue, status: 'RESOLVED' as const };
+      }
+      return issue;
+    }));
+
+    // Find if we have active invoices and flag them as high risk / excluded
+    setLocalInvoices(prev => {
+      const invoices = prev[activeTenantId] || [];
+      const updated = invoices.map(inv => {
+        if (inv.counterpartTaxCode === '0104445556' || inv.preTaxAmount === 120000000) {
+          return { ...inv, riskStatus: 'CRITICAL' as const, riskFlags: ['GDT BLACKLISTED - EXCLUDED FROM DECLARATION'] };
+        }
+        return inv;
+      });
+      return { ...prev, [activeTenantId]: updated };
+    });
+
+    // Reduce VAT deductible in report calculations if it was generated
+    setGeneratedReportSummary(prev => {
+      if (!prev) return null;
+      const taxReduction = 12000000; // 10% of 120,000,000
+      return {
+        ...prev,
+        totalVatDeductible: Math.max(0, prev.totalVatDeductible - taxReduction),
+        payableVat: prev.payableVat + taxReduction,
+        verifiedLog: prev.verifiedLog + ' [AI Kế toán trưởng: Loại trừ hóa đơn đen MST 0104445556 trị giá 120M]'
+      };
+    });
+  }, [activeTenantId]);
+
+
+  const handleUploadBankStatement = useCallback((fileName: string) => {
+    if (fileName === 'RESET') {
+      setBankFileName(null);
+      setBankTransactions([]);
+      setBankReconStatus('IDLE');
+      return;
+    }
+    setBankFileName(fileName);
+    setBankReconStatus('IDLE');
+    setBankTransactions(
+      tenant.accountingRegime === 'TT133' 
+        ? MOCK_BANK_TRANSACTIONS_TT133 
+        : MOCK_BANK_TRANSACTIONS_TT88
+    );
+  }, [tenant.accountingRegime]);
+
+  const handleAutoMatchBankTransactions = useCallback(() => {
+    setBankReconStatus('MATCHING');
+    setTimeout(() => {
+      setBankTransactions(prev => prev.map(t => ({ ...t, matchStatus: 'MATCHED' })));
+      
+      const list = tenant.accountingRegime === 'TT133' ? MOCK_BANK_TRANSACTIONS_TT133 : MOCK_BANK_TRANSACTIONS_TT88;
+      const newEntries: JournalEntry[] = [];
+      
+      list.forEach(tx => {
+        if (tx.suggestedLedgerEntry) {
+          newEntries.push({
+            id: `je-bank-${tx.id}-${Date.now()}`,
+            date: tx.date,
+            voucherCode: tx.referenceNumber,
+            description: tx.suggestedLedgerEntry.description + ' (AI Bank Match)',
+            debitAccount: tx.suggestedLedgerEntry.debitAccount,
+            creditAccount: tx.suggestedLedgerEntry.creditAccount,
+            amount: tx.amount,
+            isAutomated: true
+          });
+        }
+      });
+
+      if (newEntries.length > 0) {
+        setLocalJournals(prev => ({
+          ...prev,
+          [activeTenantId]: [...newEntries, ...(prev[activeTenantId] || [])]
+        }));
+
+        setTrialBalanceData(prev => {
+          if (prev.length === 0) return prev;
+          return prev.map(item => {
+            let addedDebit = 0;
+            let addedCredit = 0;
+
+            newEntries.forEach(entry => {
+              if (entry.debitAccount === item.accountNumber) {
+                addedDebit += entry.amount;
+              }
+              if (entry.creditAccount === item.accountNumber) {
+                addedCredit += entry.amount;
+              }
+            });
+
+            if (addedDebit > 0 || addedCredit > 0) {
+              return {
+                ...item,
+                periodDebit: item.periodDebit + addedDebit,
+                periodCredit: item.periodCredit + addedCredit,
+                closingDebit: item.accountNumber === '1111' || item.accountNumber === '1121' || item.accountNumber === 'Sổ S1' 
+                  ? item.closingDebit + addedDebit - addedCredit
+                  : item.closingDebit + addedDebit,
+                closingCredit: item.accountNumber === '331' || item.accountNumber === '3411' || item.accountNumber === '5111'
+                  ? item.closingCredit + addedCredit - addedDebit
+                  : item.closingCredit + addedCredit
+              };
+            }
+            return item;
+          });
+        });
+      }
+
+      setBankReconStatus('COMPLETED');
+    }, 1500);
+  }, [activeTenantId, tenant.accountingRegime]);
+
+  const handleRunAutopilotSimulation = useCallback(() => {
+    setAutopilotStatus('RUNNING');
+    setAutopilotLogs([]);
+    
+    const logs = [
+      '[Autopilot Engine] Khởi chạy worker lập lịch tự trị kiểm tra hạn kê khai...',
+      '[Step 1/6] Đang kết nối API Tổng cục Thuế để đồng bộ hóa đơn điện tử... (Thành công)',
+      '[Step 2/6] Chạy AI Bookkeeper đối chiếu và khớp dòng tiền sao kê Techcombank... (Thành công)',
+      '[Step 3/6] Chạy kiểm toán tuân thủ & Tự động xử lý âm quỹ tiền mặt bằng Hợp đồng Vay Cá Nhân... (Thành công)',
+      '[Step 4/6] Đang cơ cấu lại bảng lương tối ưu thuế TNCN theo Thông tư 111... (Thành công)',
+      '[Step 5/6] Kết xuất tệp XML tờ khai GTGT & Ký số từ xa không chạm bằng Cloud HSM... (Thành công)',
+      '[Step 6/6] Đang nộp tờ khai lên cổng TVAN thuế và chờ tiếp nhận... (Thành công)',
+      '[GDT Gateway] Đã tiếp nhận & Chấp nhận tờ khai điện tử. Trạng thái: CHẤP NHẬN TỜ KHAI.',
+      '[Notification Agent] Đang đồng bộ Zalo API gửi thông báo và biên nhận cho chủ doanh nghiệp...',
+      '[Autopilot Engine] Hoàn tất chu kỳ kê khai tự trị! Hệ thống AN TOÀN & TUÂN THỦ.'
+    ];
+
+    let currentLogIndex = 0;
+    
+    const interval = setInterval(() => {
+      if (currentLogIndex < logs.length) {
+        const timePrefix = `[${new Date().toLocaleTimeString('vi-VN')}] `;
+        setAutopilotLogs(prev => [...prev, timePrefix + logs[currentLogIndex]]);
+        currentLogIndex++;
+      } else {
+        clearInterval(interval);
+        
+        handleApplyPayrollOptimization();
+        handleInjectCashLoan();
+        
+        setFilingStatus('ACCEPTED');
+        setFilingStep(4);
+        setGdtReceipt(MOCK_GDT_RECEIPTS[activeTenantId] || MOCK_GDT_RECEIPTS['t-001']);
+        
+        setAutopilotStatus('COMPLETED');
+        setShowZaloNotification(true);
+      }
+    }, 450);
+
+  }, [activeTenantId, handleApplyPayrollOptimization, handleInjectCashLoan]);
+
   return {
     activeTenantId, setActiveTenantId,
     activeTab, setActiveTab,
@@ -367,6 +649,30 @@ export const useSmartTax = () => {
     isAuthenticated,
     userType,
     loginWithCredentials,
-    logoutUser
+    logoutUser,
+    
+    payrollEmployees,
+    internalControlStatus,
+    internalControlIssues,
+    handleRunInternalControlScan,
+    handleApplyPayrollOptimization,
+    handleInjectCashLoan,
+    handleExcludeBlacklistInvoice,
+
+    // Bank reconciliation
+    bankFileName,
+    bankTransactions,
+    bankReconStatus,
+    handleUploadBankStatement,
+    handleAutoMatchBankTransactions,
+
+    // Autopilot
+    autopilotEnabled,
+    setAutopilotEnabled,
+    autopilotStatus,
+    autopilotLogs,
+    showZaloNotification,
+    setShowZaloNotification,
+    handleRunAutopilotSimulation
   };
 };
