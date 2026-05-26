@@ -10,9 +10,15 @@ import {
   ShieldCheck,
   Lock,
   Unlock,
-  X
+  X,
+  ChevronRight,
+  Download,
+  Check,
+  AlertCircle,
+  ArrowLeft,
+  FileDown
 } from 'lucide-react';
-import type { Tenant } from '../../mockData';
+import type { Tenant, GdtReceipt } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
 import { useDigitalSignature } from '../../hooks/useDigitalSignature';
 
@@ -28,6 +34,17 @@ interface ReportingViewProps {
   handleCalculateDynamicReport: () => void;
   generatedReportSummary: any;
   handleDownloadXml: () => void;
+  
+  // New props for step filing
+  accountingFileName: string | null;
+  accountingAuditIssues: any[];
+  filingStep: number;
+  setFilingStep: (step: number) => void;
+  filingStatus: 'DRAFT' | 'SIGNED' | 'SUBMITTED' | 'ACCEPTED';
+  setFilingStatus: (status: 'DRAFT' | 'SIGNED' | 'SUBMITTED' | 'ACCEPTED') => void;
+  gdtReceipt: GdtReceipt | null;
+  setGdtReceipt: (receipt: GdtReceipt | null) => void;
+  handleSimulateGdtFiling: () => void;
 }
 
 export const ReportingView: React.FC<ReportingViewProps> = ({
@@ -41,7 +58,16 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
   isGeneratingReport,
   handleCalculateDynamicReport,
   generatedReportSummary,
-  handleDownloadXml
+  handleDownloadXml,
+  accountingFileName,
+  accountingAuditIssues,
+  filingStep,
+  setFilingStep,
+  filingStatus,
+  setFilingStatus,
+  gdtReceipt,
+  setGdtReceipt,
+  handleSimulateGdtFiling
 }) => {
   const ds = useDigitalSignature();
   const [error, setError] = useState<string | null>(null);
@@ -49,15 +75,88 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
   const handleSign = async () => {
     try {
       setError(null);
-      await ds.verifyPinAndSign('<XML_CONTENT_PLACEHOLDER>');
+      const xmlDraft = `<HSoThueDTu><MaSoThue>${tenant.taxCode}</MaSoThue><Report>${selectedDeclarationForm}</Report></HSoThueDTu>`;
+      await ds.verifyPinAndSign(xmlDraft);
+      setFilingStatus('SIGNED');
+      setFilingStep(4); // Move directly to Submission tab
     } catch (e: any) {
       setError(e.message);
     }
   };
 
+  const activeAuditIssues = accountingAuditIssues.filter(i => i.status === 'ACTIVE');
+
+  // Trigger submission to GDT
+  const handleGdtSubmit = () => {
+    handleSimulateGdtFiling();
+  };
+
+  const handleResetFilingWizard = () => {
+    setFilingStep(1);
+    setFilingStatus('DRAFT');
+    setGdtReceipt(null);
+    ds.disconnectToken();
+  };
+
   return (
-    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
+      {/* 4-STEP WIZARD PROGRESS BAR */}
+      <div className="content-card" style={{ padding: '16px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative' }}>
+          
+          {/* Progress bar background line */}
+          <div style={{ position: 'absolute', top: '16px', left: '8%', right: '8%', height: '2px', backgroundColor: 'rgba(255,255,255,0.05)', zIndex: 1 }}>
+            <div style={{ 
+              width: `${((filingStep - 1) / 3) * 100}%`, 
+              height: '100%', 
+              backgroundColor: 'var(--accent-purple)', 
+              transition: 'width 0.4s ease' 
+            }}></div>
+          </div>
+
+          {[
+            { step: 1, label: 'Đối soát số liệu' },
+            { step: 2, label: 'Tối ưu thuế AI' },
+            { step: 3, label: 'Ký số SmartTax' },
+            { step: 4, label: 'Nộp & Biên nhận GDT' }
+          ].map(s => {
+            const isCompleted = filingStep > s.step || (s.step === 4 && filingStatus === 'ACCEPTED');
+            const isActive = filingStep === s.step;
+            return (
+              <div key={s.step} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, width: '20%' }}>
+                <div style={{ 
+                  width: '32px', 
+                  height: '32px', 
+                  borderRadius: '50%', 
+                  backgroundColor: isCompleted ? 'var(--accent-emerald)' : (isActive ? 'var(--accent-purple)' : '#0f111a'),
+                  border: isCompleted ? 'none' : `2px solid ${isActive ? 'var(--accent-purple)' : 'rgba(255,255,255,0.1)'}`,
+                  color: isCompleted || isActive ? '#ffffff' : 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  boxShadow: isActive ? '0 0 15px rgba(157,0,255,0.4)' : 'none',
+                  transition: 'all 0.3s'
+                }}>
+                  {isCompleted ? <Check size={16} color="#000000" style={{ fontWeight: 900 }} /> : s.step}
+                </div>
+                <span style={{ 
+                  fontSize: '11px', 
+                  color: isActive ? '#ffffff' : 'var(--text-muted)', 
+                  fontWeight: isActive ? 800 : 500, 
+                  marginTop: '8px',
+                  textAlign: 'center'
+                }}>
+                  {s.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* PIN DIALOG OVERLAY */}
       {ds.showPinDialog && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -112,208 +211,541 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
-        <div className="content-card">
-          <div className="flex-row-center" style={{ gap: '10px', marginBottom: '20px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <FileText size={18} color="#ffffff" />
+      {/* DYNAMIC STEP CONTENT */}
+      {filingStep === 1 && (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px' }}>
+          {/* STEP 1: LEFT SETTINGS CARD */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="content-card">
+              <div className="flex-row-center" style={{ gap: '10px', marginBottom: '20px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <FileText size={18} color="#ffffff" />
+                </div>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Cấu hình Tờ khai Thuế</h3>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <select 
+                  value={selectedDeclarationForm}
+                  onChange={(e) => setSelectedDeclarationForm(e.target.value)}
+                  className="input-premium"
+                  style={{ padding: '10px' }}
+                >
+                  <option value="01/GTGT">01/GTGT - Tờ khai thuế GTGT (SME)</option>
+                  <option value="04/GTGT">04/GTGT - Tờ khai thuế GTGT (Trực tiếp)</option>
+                  <option value="01/CNKD">01/CNKD - Tờ khai Hộ kinh doanh (TT88)</option>
+                  <option value="05/KK-TNCN">05/KK-TNCN - Tờ khai khấu trừ thuế TNCN</option>
+                  <option value="03/TNDN">03/TNDN - Quyết toán thuế TNDN năm</option>
+                </select>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <select 
+                    value={reportPeriodType}
+                    onChange={(e) => setReportPeriodType(e.target.value as any)}
+                    className="input-premium"
+                    style={{ padding: '10px' }}
+                  >
+                    <option value="MONTH">Theo Tháng</option>
+                    <option value="QUARTER">Theo Quý</option>
+                    <option value="YEAR">Theo Năm</option>
+                  </select>
+                  <input 
+                    type="text" 
+                    value={reportPeriodValue}
+                    onChange={(e) => setReportPeriodValue(e.target.value)}
+                    placeholder="Kỳ"
+                    className="input-premium"
+                    style={{ padding: '10px', textAlign: 'center' }}
+                  />
+                </div>
+
+                <button 
+                  onClick={handleCalculateDynamicReport}
+                  disabled={isGeneratingReport}
+                  className="btn-primary" 
+                  style={{ width: '100%', marginTop: '8px', justifyContent: 'center', padding: '12px' }}
+                >
+                  <RefreshCw size={14} className={isGeneratingReport ? 'animate-spin' : ''} />
+                  <span>{isGeneratingReport ? 'Đang tổng hợp...' : 'Tổng hợp Số liệu'}</span>
+                </button>
+              </div>
             </div>
-            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Thiết lập Kỳ Báo cáo & Mẫu biểu</h3>
+
+            {/* AUDIT WARNING CARD */}
+            {accountingFileName && activeAuditIssues.length > 0 && (
+              <div className="content-card animate-fade-in" style={{ border: '1px solid rgba(255,51,51,0.2)', backgroundColor: 'rgba(255,51,51,0.01)' }}>
+                <div className="flex-row-center" style={{ gap: '8px', marginBottom: '8px' }}>
+                  <AlertCircle size={18} color="#ff4444" />
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#ff4444' }}>Cảnh báo Số liệu Sổ cái</span>
+                </div>
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '12px' }}>
+                  AI phát hiện sổ cái còn <strong>{activeAuditIssues.length} sai phạm định khoản</strong> chưa được sửa đổi. Kê khai số liệu này có thể tăng tỷ lệ rủi ro thanh tra thuế.
+                </p>
+                <button 
+                  onClick={() => {
+                    const btn = document.querySelector('button[onClick*="accounting"]');
+                    if (btn) (btn as HTMLButtonElement).click();
+                  }}
+                  className="btn-secondary" 
+                  style={{ width: '100%', justifyContent: 'center', fontSize: '10px', borderColor: 'rgba(255,51,51,0.2)', color: '#ff8888' }}
+                >
+                  <span>Đi sửa lỗi sổ cái ngay</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <select 
-              value={selectedDeclarationForm}
-              onChange={(e) => setSelectedDeclarationForm(e.target.value)}
-              className="input-premium"
-              style={{ padding: '10px' }}
-            >
-              <option value="01/GTGT">01/GTGT - Tờ khai thuế GTGT (SME)</option>
-              <option value="04/GTGT">04/GTGT - Tờ khai thuế GTGT (Trực tiếp)</option>
-              <option value="01/CNKD">01/CNKD - Tờ khai Hộ kinh doanh (TT88)</option>
-              <option value="05/KK-TNCN">05/KK-TNCN - Tờ khai khấu trừ thuế TNCN</option>
-              <option value="03/TNDN">03/TNDN - Quyết toán thuế TNDN năm</option>
-            </select>
+          {/* STEP 1: RIGHT DECLARATION DETAIL */}
+          <div className="content-card" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1 }}>
+              <div className="flex-row-between" style={{ marginBottom: '20px' }}>
+                <div className="flex-row-center" style={{ gap: '10px' }}>
+                  <Sparkles size={20} color="var(--accent-lime)" />
+                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>Đối soát Số liệu Báo cáo Kê khai</h3>
+                </div>
+                <span className="badge badge-amber">BẢN THẢO DRAFT</span>
+              </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <select 
-                value={reportPeriodType}
-                onChange={(e) => setReportPeriodType(e.target.value as any)}
-                className="input-premium"
-                style={{ padding: '10px' }}
-              >
-                <option value="MONTH">Theo Tháng</option>
-                <option value="QUARTER">Theo Quý</option>
-                <option value="YEAR">Theo Năm</option>
-              </select>
-              <input 
-                type="text" 
-                value={reportPeriodValue}
-                onChange={(e) => setReportPeriodValue(e.target.value)}
-                placeholder="Kỳ"
-                className="input-premium"
-                style={{ padding: '10px', textAlign: 'center' }}
-              />
+              {generatedReportSummary ? (
+                <div className="animate-fade-in">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                    <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Doanh thu tính thuế</span>
+                      <p style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>{formatCurrency(generatedReportSummary.totalRevenueBase)}</p>
+                    </div>
+                    <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Thuế suất trung bình</span>
+                      <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-cyan)' }}>{tenant.accountingRegime === 'TT133' ? '10% (Khấu trừ)' : '1.5% (Thuế khoán)'}</p>
+                    </div>
+                    <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.1)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Tổng thuế phải nộp kỳ này</span>
+                      <p style={{ fontSize: '20px', fontWeight: 900, color: 'var(--accent-lime)' }}>{formatCurrency(generatedReportSummary.payableVat + generatedReportSummary.payableCitOrPit)}</p>
+                    </div>
+                    <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Hạn chót kê khai</span>
+                      <p style={{ fontSize: '16px', fontWeight: 800, color: '#ff4444' }}>{generatedReportSummary.deadlineStr}</p>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#000000', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '24px' }}>
+                    <div className="flex-row-center" style={{ gap: '8px', marginBottom: '8px' }}>
+                      <CheckCircle2 size={16} color="var(--accent-emerald)" />
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>Nhật ký đối soát tự động:</span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                      {generatedReportSummary.verifiedLog}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.3, flexDirection: 'column', gap: '16px', padding: '60px 0' }}>
+                  <Layers size={48} />
+                  <p style={{ fontSize: '14px', fontWeight: 500 }}>Vui lòng bấm 'Tổng hợp Số liệu' để tạo bản thảo</p>
+                </div>
+              )}
             </div>
 
+            <div style={{ marginTop: 'auto', display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={handleDownloadXml}
+                disabled={!generatedReportSummary}
+                className="btn-secondary" 
+                style={{ flex: 1, justifyContent: 'center', padding: '14px' }}
+              >
+                <FileCode size={16} />
+                <span>Xem XML Draft</span>
+              </button>
+              <button 
+                onClick={() => setFilingStep(2)}
+                disabled={!generatedReportSummary}
+                className="btn-primary" 
+                style={{ flex: 1, justifyContent: 'center', padding: '14px', gap: '8px' }}
+              >
+                <span>Chạy Tối ưu AI</span>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {filingStep === 2 && (
+        /* STEP 2: AI OPTIMIZATION PANEL */
+        <div className="content-card animate-fade-in">
+          <div className="flex-row-between" style={{ paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '20px' }}>
+            <div className="flex-row-center" style={{ gap: '10px' }}>
+              <Sparkles size={20} color="var(--accent-purple)" />
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>Hệ thống Tối ưu & Phòng vệ Thuế AI (AI Tax Guard)</h3>
+            </div>
+            <span className="badge badge-lime" style={{ color: 'var(--accent-emerald)', borderColor: 'rgba(0,229,153,0.3)', backgroundColor: 'rgba(0,229,153,0.05)' }}>
+              ✓ ĐÃ TỐI ƯU TUÂN THỦ
+            </span>
+          </div>
+
+          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
+            Bộ máy AI rà soát luật đã kiểm tra tờ khai GTGT/TNDN với các quy định thuế Việt Nam hiện hành. Dưới đây là các khuyến nghị tối ưu hóa chi phí được trừ và điều chỉnh nghĩa vụ thuế hợp pháp:
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+            {tenant.accountingRegime === 'TT133' ? (
+              <>
+                <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(0,224,128,0.02)', border: '1px solid rgba(0,224,128,0.15)', borderLeft: '4px solid var(--accent-emerald)' }}>
+                  <div className="flex-row-between" style={{ marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#ffffff' }}>Loại trừ chi phí không thanh toán qua ngân hàng</span>
+                    <span style={{ fontSize: '11px', color: 'var(--accent-emerald)', fontWeight: 700 }}>Hoàn thành</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    Bút toán chi mua văn phòng phẩm Đại Dương 24.5M bằng tiền mặt đã được AI đề xuất chuyển đổi sang ủy nhiệm chi ngân hàng hợp lệ. Giúp doanh nghiệp bảo toàn khấu trừ thuế GTGT 2,450,000 VND và bảo toàn chi phí được trừ khi tính thuế TNDN, tránh bị loại trừ chi phí (tiết kiệm ước tính 4,900,000 VND tiền thuế TNDN).
+                  </p>
+                </div>
+                
+                <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(0,224,128,0.02)', border: '1px solid rgba(0,224,128,0.15)', borderLeft: '4px solid var(--accent-emerald)' }}>
+                  <div className="flex-row-between" style={{ marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#ffffff' }}>Khấu trừ Thuế GTGT đầu vào hợp lệ 100%</span>
+                    <span style={{ fontSize: '11px', color: 'var(--accent-emerald)', fontWeight: 700 }}>Hoàn thành</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    Đối chiếu 100% khớp hóa đơn gốc từ cơ sở dữ liệu Tổng cục Thuế. Thuế GTGT đầu vào được khấu trừ kỳ này là 12,500,000 VND. Không phát hiện hóa đơn đầu vào từ doanh nghiệp bỏ trốn/ngừng hoạt động trong kỳ khai báo này.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(0,224,128,0.02)', border: '1px solid rgba(0,224,128,0.15)', borderLeft: '4px solid var(--accent-emerald)' }}>
+                  <div className="flex-row-between" style={{ marginBottom: '6px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#ffffff' }}>Áp tỷ lệ thuế khoán chuẩn theo nhóm ngành thương mại</span>
+                    <span style={{ fontSize: '11px', color: 'var(--accent-emerald)', fontWeight: 700 }}>Hoàn thành</span>
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    Áp dụng đúng Thông tư 40/2021/TT-BTC: Phân tách doanh thu bán hàng tiêu dùng chịu mức thuế suất khoán 1.5% GTGT + 0.5% TNCN. Doanh thu dịch vụ ăn uống chịu mức 3% GTGT + 1.5% TNCN. Giúp hộ kinh doanh kê khai đúng, giảm thiểu nguy cơ nộp thừa do gộp chung doanh thu.
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
             <button 
-              onClick={handleCalculateDynamicReport}
-              disabled={isGeneratingReport}
-              className="btn-primary" 
-              style={{ width: '100%', marginTop: '8px', justifyContent: 'center', padding: '12px' }}
+              onClick={() => setFilingStep(1)}
+              className="btn-secondary" 
+              style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <RefreshCw size={14} className={isGeneratingReport ? 'animate-spin' : ''} />
-              <span>{isGeneratingReport ? 'Đang tổng hợp...' : 'Kết xuất Dữ liệu Kế toán'}</span>
+              <ArrowLeft size={16} />
+              <span>Quay lại bước 1</span>
+            </button>
+            <button 
+              onClick={() => setFilingStep(3)}
+              className="btn-primary" 
+              style={{ padding: '12px 30px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <span>Tiến hành Ký số Tờ khai</span>
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
+      )}
 
-        {/* DIGITAL SIGNATURE BRIDGE PANEL */}
-        <div className="content-card" style={{ border: ds.isConnected ? '1px solid rgba(157,0,255,0.3)' : '1px solid var(--border-color)' }}>
-          <div className="flex-row-between" style={{ marginBottom: '16px' }}>
-            <div className="flex-row-center" style={{ gap: '10px' }}>
-              <Usb size={18} color={ds.isConnected ? 'var(--accent-purple)' : 'var(--text-muted)'} />
-              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Cầu nối Ký số SmartTax Bridge</h3>
+      {filingStep === 3 && (
+        /* STEP 3: DIGITAL SIGNATURE PANEL */
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
+          {/* DIGITAL SIGNATURE CONTROLS */}
+          <div className="content-card" style={{ border: ds.isConnected ? '1px solid rgba(157,0,255,0.3)' : '1px solid var(--border-color)' }}>
+            <div className="flex-row-between" style={{ marginBottom: '16px' }}>
+              <div className="flex-row-center" style={{ gap: '10px' }}>
+                <Usb size={18} color={ds.isConnected ? 'var(--accent-purple)' : 'var(--text-muted)'} />
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Cầu nối Ký số SmartTax Bridge</h3>
+              </div>
+              {ds.isConnected && <span className="live-indicator" style={{ backgroundColor: 'var(--accent-purple)' }}></span>}
             </div>
-            {ds.isConnected && <span className="live-indicator" style={{ backgroundColor: 'var(--accent-purple)' }}></span>}
+
+            {!ds.isConnected ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '10px 0' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: 1.4 }}>
+                  Vui lòng lựa chọn phương thức kết nối chứng thư số của bạn để tiến hành ký tệp XML tờ khai điện tử:
+                </p>
+                <button 
+                  onClick={() => ds.requestToken('USB_TOKEN')}
+                  disabled={ds.isConnecting}
+                  className="btn-secondary" 
+                  style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+                >
+                  <Usb size={14} />
+                  <span>Ký số bằng USB Token (PKCS#11)</span>
+                </button>
+                <button 
+                  onClick={() => ds.requestToken('SMART_CA')}
+                  disabled={ds.isConnecting}
+                  className="btn-secondary" 
+                  style={{ width: '100%', justifyContent: 'center', padding: '12px', borderColor: 'rgba(157,0,255,0.2)' }}
+                >
+                  <Sparkles size={14} color="#d4a6ff" />
+                  <span style={{ color: '#d4a6ff' }}>Ký số bằng SmartCA (Remote Signing)</span>
+                </button>
+              </div>
+            ) : (
+              <div className="animate-fade-in">
+                <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(157,0,255,0.1)', marginBottom: '16px' }}>
+                  <div style={{ marginBottom: '12px', paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block' }}>CHỨNG THƯ ĐANG KẾT NỐI:</span>
+                    <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: 700 }}>{ds.certInfo?.subject}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>Nhà Cung Cấp:</span>
+                      <span style={{ fontSize: '11px', color: '#ffffff', fontWeight: 600 }}>{ds.certInfo?.issuer}</span>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>Số Serial:</span>
+                      <span style={{ fontSize: '11px', color: '#ffffff', fontFamily: 'monospace' }}>{ds.certInfo?.serialNumber}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button 
+                    onClick={ds.disconnectToken}
+                    style={{ flex: 1, background: 'none', border: '1px solid rgba(255,51,51,0.2)', color: '#ff4444', fontSize: '11px', padding: '10px', borderRadius: '6px', cursor: 'pointer' }}
+                  >
+                    Ngắt kết nối
+                  </button>
+                  <button 
+                    onClick={ds.openPinDialog}
+                    disabled={filingStatus === 'SIGNED'}
+                    className="btn-primary"
+                    style={{ flex: 2, justifyContent: 'center' }}
+                  >
+                    <Unlock size={14} />
+                    <span>Yêu cầu ký số XML</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          {!ds.isConnected ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* DRAFT TO SIGN CARD */}
+          <div className="content-card" style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1 }}>
+              <div className="flex-row-between" style={{ marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#ffffff' }}>Hồ sơ tờ khai chờ ký số</h3>
+                <span className={`badge ${filingStatus === 'SIGNED' ? 'badge-lime' : 'badge-amber'}`}>
+                  {filingStatus === 'SIGNED' ? 'ĐÃ KÝ SỐ' : 'CHỜ KÝ SỐ'}
+                </span>
+              </div>
+
+              <div style={{ backgroundColor: 'rgba(255,255,255,0.01)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)', fontSize: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px', marginBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Mẫu biểu kê khai:</span>
+                  <strong style={{ color: '#ffffff' }}>{selectedDeclarationForm}</strong>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px', marginBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Mã số thuế nộp:</span>
+                  <strong style={{ color: '#ffffff' }}>{tenant.taxCode}</strong>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px', marginBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Đơn vị nộp thuế:</span>
+                  <strong style={{ color: '#ffffff' }}>{tenant.companyName}</strong>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px', marginBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Kỳ báo cáo:</span>
+                  <strong style={{ color: '#ffffff' }}>{generatedReportSummary?.periodText}</strong>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px', marginBottom: '8px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Số tiền thuế nộp:</span>
+                  <strong style={{ color: 'var(--accent-lime)' }}>{formatCurrency(generatedReportSummary?.payableVat + (generatedReportSummary?.payableCitOrPit || 0))}</strong>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Định dạng file:</span>
+                  <strong style={{ color: 'var(--accent-cyan)' }}>XML (Chuẩn XSD Tổng cục Thuế)</strong>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
               <button 
-                onClick={() => ds.requestToken('USB_TOKEN')}
-                disabled={ds.isConnecting}
+                onClick={() => setFilingStep(2)}
                 className="btn-secondary" 
-                style={{ width: '100%', justifyContent: 'center' }}
+                style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
-                <Usb size={14} />
-                <span>USB Token (PKCS#11)</span>
+                <ArrowLeft size={16} />
+                <span>Quay lại</span>
               </button>
+              
               <button 
-                onClick={() => ds.requestToken('SMART_CA')}
-                disabled={ds.isConnecting}
-                className="btn-secondary" 
-                style={{ width: '100%', justifyContent: 'center', borderColor: 'rgba(157,0,255,0.2)' }}
+                onClick={() => {
+                  setFilingStep(4);
+                }}
+                disabled={filingStatus !== 'SIGNED'}
+                className="btn-primary" 
+                style={{ flex: 1, justifyContent: 'center', gap: '8px' }}
               >
-                <Sparkles size={14} color="#d4a6ff" />
-                <span style={{ color: '#d4a6ff' }}>SmartCA (Remote Signing)</span>
+                <span>Nộp tờ khai sang GDT</span>
+                <ChevronRight size={16} />
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {filingStep === 4 && (
+        /* STEP 4: GDT GATEWAY SIMULATION & RECEIPT */
+        <div className="content-card animate-fade-in" style={{ minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+          {filingStatus === 'SIGNED' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '40px 0', textAlign: 'center' }}>
+              <RefreshCw size={48} className="animate-spin" color="var(--accent-purple)" style={{ marginBottom: '20px' }} />
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff', marginBottom: '8px' }}>Tờ khai đã sẵn sàng để gửi</h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', maxWidth: '420px', marginBottom: '24px', lineHeight: 1.5 }}>
+                Tờ khai thuế đã được ký số hợp lệ bằng chứng thư số của bạn. Bấm nút bên dưới để truyền nhận file XML trực tiếp sang Gateway của Tổng cục Thuế Việt Nam thông qua kênh T-VAN.
+              </p>
+              <button 
+                onClick={handleGdtSubmit} 
+                className="btn-primary" 
+                style={{ padding: '12px 36px', fontSize: '13px', fontWeight: 700 }}
+              >
+                <span>Nộp Tờ Khai Lên Tổng Cục Thuế</span>
+              </button>
+            </div>
+          ) : filingStatus === 'SUBMITTED' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '40px 0', textAlign: 'center' }}>
+              <div className="animate-spin" style={{ marginBottom: '20px' }}>
+                <RefreshCw size={48} color="var(--accent-cyan)" />
+              </div>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: '6px' }}>Đang truyền tải dữ liệu tờ khai ký số...</h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '300px' }}>
+                Hệ thống TVAN đang mã hóa và gửi gói tin XML tờ khai sang hệ thống eGP của Tổng cục Thuế. Vui lòng không đóng cửa sổ.
+              </p>
             </div>
           ) : (
-            <div className="animate-fade-in">
-              <div style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(157,0,255,0.1)', marginBottom: '16px' }}>
-                <div style={{ marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block' }}>CHỨNG THƯ ĐANG SỬ DỤNG:</span>
-                  <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: 700 }}>{ds.certInfo?.subject}</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>Nhà CC:</span>
-                    <span style={{ fontSize: '10px', color: '#ffffff' }}>{ds.certInfo?.issuer}</span>
+            /* ACCEPTED - DISPLAY TAX RECEIPT */
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div className="flex-row-between" style={{ paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: '20px' }}>
+                <div className="flex-row-center" style={{ gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(0,229,153,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ShieldCheck size={18} color="var(--accent-emerald)" />
                   </div>
                   <div>
-                    <span style={{ fontSize: '9px', color: 'var(--text-muted)', display: 'block' }}>Serial:</span>
-                    <span style={{ fontSize: '10px', color: '#ffffff', fontFamily: 'monospace' }}>{ds.certInfo?.serialNumber}</span>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>Kết quả Khai báo: ĐÃ CHẤP NHẬN TỜ KHAI</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--accent-emerald)', fontWeight: 600 }}>Cơ quan thuế quản lý trực tiếp đã ghi nhận nghĩa vụ thuế thành công</p>
                   </div>
                 </div>
-              </div>
-              <button 
-                onClick={ds.disconnectToken}
-                style={{ width: '100%', background: 'none', border: '1px solid rgba(255,51,51,0.2)', color: '#ff4444', fontSize: '10px', padding: '6px', borderRadius: '4px', cursor: 'pointer' }}
-              >
-                Ngắt kết nối {ds.method === 'USB_TOKEN' ? 'Token' : 'Remote Session'}
-              </button>
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      <div className="content-card" style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1 }}>
-          <div className="flex-row-between" style={{ marginBottom: '20px' }}>
-            <div className="flex-row-center" style={{ gap: '10px' }}>
-              <Sparkles size={20} color="var(--accent-lime)" />
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ffffff' }}>Bản thảo Tờ khai Thuế AI</h3>
-            </div>
-            <div className={`badge ${ds.lastSignedAt ? 'badge-lime' : 'badge-amber'}`}>
-              {ds.lastSignedAt ? 'ĐÃ KÝ SỐ' : 'CHỜ KÝ SỐ'}
-            </div>
-          </div>
-
-          {generatedReportSummary ? (
-            <div className="animate-fade-in">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Doanh thu tính thuế</span>
-                  <p style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff' }}>{formatCurrency(generatedReportSummary.totalRevenueBase)}</p>
-                </div>
-                <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Thuế suất trung bình</span>
-                  <p style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-cyan)' }}>{tenant.accountingRegime === 'TT133' ? '10%' : '1.5%'}</p>
-                </div>
-                <div style={{ padding: '16px', borderRadius: '12px', backgroundColor: 'rgba(204,255,0,0.05)', border: '1px solid rgba(204,255,0,0.1)' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Tổng thuế phải nộp</span>
-                  <p style={{ fontSize: '20px', fontWeight: 900, color: 'var(--accent-lime)' }}>{formatCurrency(generatedReportSummary.payableVat + generatedReportSummary.payableCitOrPit)}</p>
-                </div>
+                <span className="badge badge-lime">SUCCESS</span>
               </div>
 
-              {ds.lastSignedAt && (
-                <div className="animate-fade-in" style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(0,229,153,0.05)', border: '1px solid rgba(0,229,153,0.2)', marginBottom: '24px' }}>
-                  <div className="flex-row-center" style={{ gap: '8px', marginBottom: '8px' }}>
-                    <ShieldCheck size={16} color="var(--accent-emerald)" />
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>Chứng thư số xác thực:</span>
+              {/* GDT TAX RECEIPT TEMPLATE */}
+              {gdtReceipt && (
+                <div style={{ 
+                  backgroundColor: 'rgba(0,0,0,0.4)', 
+                  border: '1px solid rgba(255,255,255,0.05)', 
+                  borderRadius: '12px', 
+                  padding: '24px', 
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  color: '#ffffff',
+                  boxShadow: 'inset 0 0 20px rgba(255,255,255,0.01)',
+                  marginBottom: '24px',
+                  position: 'relative'
+                }}>
+                  {/* Decorative stamp watermark */}
+                  <div style={{ 
+                    position: 'absolute', 
+                    top: '20px', 
+                    right: '30px', 
+                    border: '3px double #00e599', 
+                    color: '#00e599', 
+                    padding: '8px 12px', 
+                    borderRadius: '6px', 
+                    fontWeight: 900, 
+                    fontSize: '11px', 
+                    transform: 'rotate(15deg)', 
+                    opacity: 0.75,
+                    fontFamily: 'monospace' 
+                  }}>
+                    GDT ACCEPTED
                   </div>
-                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                    Đã ký bởi: <strong>{ds.deviceName}</strong><br />
-                    Thời gian: {ds.lastSignedAt}<br />
-                    Mã giao dịch GDT: <span className="font-mono">SIG-8812-TX-AI</span>
-                  </p>
+
+                  <div style={{ textAlign: 'center', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '10px', letterSpacing: '0.1em', color: 'var(--text-muted)', display: 'block', fontWeight: 800 }}>TỔNG CỤC THUẾ VIỆT NAM</span>
+                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#ffffff', marginTop: '4px', display: 'block' }}>THÔNG BÁO TIẾP NHẬN & CHẤP NHẬN HỒ SƠ KHAI THUẾ ĐIỆN TỬ</span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: '12px', fontSize: '12px', lineHeight: 1.6 }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Mã số thông báo:</span>
+                    <strong style={{ color: '#ffffff' }} className="font-mono">{gdtReceipt.receiptNumber}</strong>
+
+                    <span style={{ color: 'var(--text-muted)' }}>Mã số thuế NNT:</span>
+                    <span style={{ color: '#ffffff', fontWeight: 600 }}>{gdtReceipt.taxCode}</span>
+
+                    <span style={{ color: 'var(--text-muted)' }}>Tên người nộp thuế:</span>
+                    <strong style={{ color: '#ffffff' }}>{gdtReceipt.companyName}</strong>
+
+                    <span style={{ color: 'var(--text-muted)' }}>Hồ sơ khai thuế:</span>
+                    <span style={{ color: '#ffffff' }}>{gdtReceipt.declarationType}</span>
+
+                    <span style={{ color: 'var(--text-muted)' }}>Kỳ tính thuế:</span>
+                    <span style={{ color: '#ffffff', fontWeight: 600 }}>{gdtReceipt.period}</span>
+
+                    <span style={{ color: 'var(--text-muted)' }}>Thời gian tiếp nhận:</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{gdtReceipt.receivedDate}</span>
+
+                    <span style={{ color: 'var(--text-muted)' }}>Cơ quan thuế nhận:</span>
+                    <span style={{ color: '#ffffff' }}>{gdtReceipt.gdtCode}</span>
+
+                    <span style={{ color: 'var(--text-muted)' }}>Mã nộp tiền NSNN:</span>
+                    <strong style={{ color: 'var(--accent-lime)' }} className="font-mono">{gdtReceipt.paymentCode}</strong>
+
+                    <span style={{ color: 'var(--text-muted)' }}>Mã chữ ký SHA256:</span>
+                    <span style={{ color: 'var(--text-muted)', fontFamily: 'monospace', fontSize: '10px', wordBreak: 'break-all' }}>{gdtReceipt.xmlHash}</span>
+                  </div>
+
+                  <div style={{ 
+                    marginTop: '20px', 
+                    paddingTop: '16px', 
+                    borderTop: '1px dashed rgba(255,255,255,0.1)', 
+                    backgroundColor: 'rgba(0,229,153,0.03)', 
+                    border: '1px solid rgba(0,229,153,0.1)', 
+                    borderRadius: '6px',
+                    padding: '12px',
+                    fontSize: '11px',
+                    color: '#ffffff',
+                    lineHeight: 1.5
+                  }}>
+                    <strong>Phản hồi chính thức từ GDT:</strong><br />
+                    {gdtReceipt.acceptanceMessage}
+                  </div>
                 </div>
               )}
 
-              <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: '#000000', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '24px' }}>
-                <div className="flex-row-center" style={{ gap: '8px', marginBottom: '8px' }}>
-                  <CheckCircle2 size={16} color="var(--accent-emerald)" />
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#ffffff' }}>Nhật ký đối soát AI:</span>
-                </div>
-                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  {generatedReportSummary.verifiedLog}
-                </p>
-                <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '10px', color: 'var(--accent-cyan)', fontWeight: 600 }}>
-                  🛡️ Tuân thủ: {tenant.accountingRegime === 'TT133' ? 'Thông tư 80/2021/TT-BTC' : 'Thông tư 40/2021/TT-BTC'}
-                </div>
+              <div style={{ marginTop: 'auto', display: 'flex', gap: '12px' }}>
+                <button 
+                  onClick={handleDownloadXml}
+                  className="btn-secondary" 
+                  style={{ flex: 1, justifyContent: 'center', padding: '12px' }}
+                >
+                  <Download size={14} />
+                  <span>Tải XML Hồ Sơ Gốc</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    // Open a simulated print PDF window or alerts
+                    alert('Đang kết xuất thông báo thuế PDF chính thức...');
+                  }}
+                  className="btn-secondary" 
+                  style={{ flex: 1, justifyContent: 'center', padding: '12px' }}
+                >
+                  <FileDown size={14} />
+                  <span>Tải Thông báo PDF</span>
+                </button>
+                <button 
+                  onClick={handleResetFilingWizard}
+                  className="btn-primary" 
+                  style={{ flex: 1.2, justifyContent: 'center', padding: '12px', gap: '8px' }}
+                >
+                  <RefreshCw size={14} />
+                  <span>Khởi động phiên mới</span>
+                </button>
               </div>
-            </div>
-          ) : (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.3, flexDirection: 'column', gap: '16px', padding: '60px 0' }}>
-              <Layers size={48} />
-              <p style={{ fontSize: '14px', fontWeight: 500 }}>Chưa có dữ liệu kỳ báo cáo</p>
             </div>
           )}
         </div>
-
-        <div style={{ marginTop: 'auto', display: 'flex', gap: '12px' }}>
-          <button 
-            onClick={handleDownloadXml}
-            className="btn-secondary" 
-            style={{ flex: 1, justifyContent: 'center', padding: '14px' }}
-          >
-            <FileCode size={16} />
-            <span>Tải XML (Bản thảo)</span>
-          </button>
-          <button 
-            onClick={ds.openPinDialog}
-            disabled={!ds.isConnected || ds.lastSignedAt !== null || !generatedReportSummary}
-            className="btn-primary" 
-            style={{ flex: 1, justifyContent: 'center', padding: '14px' }}
-          >
-            <Unlock size={16} />
-            <span>Ký số & Nộp Tờ khai</span>
-          </button>
-        </div>
-      </div>
+      )}
 
     </div>
   );

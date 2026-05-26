@@ -79,6 +79,49 @@ export interface LegalQA {
   sourceId?: string; // Links to embedded source
 }
 
+export interface AccountingAuditIssue {
+  id: string;
+  level: 'CRITICAL' | 'WARNING' | 'INFO';
+  title: string;
+  description: string;
+  lawBasis: string;
+  affectedAccount: string;
+  affectedValue: number;
+  status: 'ACTIVE' | 'RESOLVED';
+  autoFixText: string;
+  fixData: {
+    debitAccount?: string;
+    creditAccount?: string;
+    amount?: number;
+    action?: 'REPLACE_ACCOUNT' | 'SPLIT_TRANSACTION' | 'REMOVE_TRANSACTION' | 'MARK_NON_DEDUCTIBLE';
+  };
+}
+
+export interface TrialBalanceItem {
+  accountNumber: string;
+  accountName: string;
+  openingDebit: number;
+  openingCredit: number;
+  periodDebit: number;
+  periodCredit: number;
+  closingDebit: number;
+  closingCredit: number;
+}
+
+export interface GdtReceipt {
+  receiptNumber: string;
+  receivedDate: string;
+  statusText: string;
+  taxCode: string;
+  companyName: string;
+  declarationType: string;
+  period: string;
+  xmlHash: string;
+  gdtCode: string;
+  paymentCode: string;
+  acceptanceMessage: string;
+}
+
 export const MOCK_TENANTS: Tenant[] = [
   {
     id: 't-001',
@@ -687,3 +730,131 @@ export const MOCK_CIRCULAR_88_BOOKS: Circular88BookRecord[] = [
     note: 'Mã chương 757, Tiểu mục 1701 (GTGT) & 1001 (TNCN)'
   }
 ];
+
+export const MOCK_AUDIT_ISSUES_TT133: AccountingAuditIssue[] = [
+  {
+    id: 'iss-101',
+    level: 'CRITICAL',
+    title: 'Giao dịch mua hàng thanh toán tiền mặt vượt định mức 20 triệu',
+    description: 'Bút toán thanh toán hóa đơn số 00001090 cho Công ty Văn phòng phẩm Đại Dương với số tiền 24,500,000 VND bằng Tiền mặt (Nợ TK 6422 / Có TK 1111). Theo quy định, các hóa đơn trên 20 triệu bắt buộc phải chuyển khoản để được khấu trừ thuế GTGT và tính chi phí hợp lệ.',
+    lawBasis: 'Khoản 1 Điều 4 Thông tư 96/2015/TT-BTC & Khoản 5 Điều 14 Thông tư 219/2013/TT-BTC',
+    affectedAccount: '1111 (Tiền mặt Việt Nam Đồng)',
+    affectedValue: 24500000,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động sửa: Chuyển tài khoản thanh toán sang Có TK 1121 (Tiền gửi ngân hàng) và gắn mã chứng từ UNC',
+    fixData: {
+      creditAccount: '1121',
+      action: 'REPLACE_ACCOUNT'
+    }
+  },
+  {
+    id: 'iss-102',
+    level: 'WARNING',
+    title: 'Sử dụng sai hệ thống tài khoản theo Chế độ kế toán TT133',
+    description: 'Phát hiện 2 bút toán dịch vụ mua ngoài đang định khoản vào Nợ TK 6427 (Chi phí dịch vụ mua ngoài) và Nợ TK 6428 (Chi phí bằng tiền khác). Chế độ kế toán TT133 cho DN vừa và nhỏ không sử dụng TK 6427/6428 mà bắt buộc gộp chung vào TK 6422 (Chi phí quản lý doanh nghiệp).',
+    lawBasis: 'Điều 58 Thông tư 133/2016/TT-BTC về Hệ thống tài khoản kế toán',
+    affectedAccount: '6427 / 6428',
+    affectedValue: 12800000,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động sửa: Chuyển toàn bộ dư nợ của 6427/6428 sang TK 6422 theo chuẩn TT133',
+    fixData: {
+      debitAccount: '6422',
+      action: 'REPLACE_ACCOUNT'
+    }
+  },
+  {
+    id: 'iss-103',
+    level: 'INFO',
+    title: 'Tỷ lệ chi phí Tiếp thị quảng cáo tăng cao đột biến',
+    description: 'Tổng chi phí tiếp thị quảng cáo của quý này chiếm 18.5% tổng doanh thu thực tế, cao hơn mức trung bình ngành công nghệ (10-12%). Mặc dù không còn bị khống chế trần 15% nhưng cơ quan thuế sẽ thanh tra kỹ tính hợp lý và hồ sơ bàn giao dịch vụ.',
+    lawBasis: 'Khoản 2 Điều 14 Luật số 71/2014/QH13 (Bãi bỏ khống chế chi phí quảng cáo)',
+    affectedAccount: '6422 (Chi phí quản lý - chi tiết ADS)',
+    affectedValue: 145000000,
+    status: 'ACTIVE',
+    autoFixText: 'Đánh dấu rà soát hồ sơ chứng từ (Hợp đồng ads, Báo cáo nghiệm thu)',
+    fixData: {
+      action: 'MARK_NON_DEDUCTIBLE'
+    }
+  }
+];
+
+export const MOCK_AUDIT_ISSUES_TT88: AccountingAuditIssue[] = [
+  {
+    id: 'iss-201',
+    level: 'CRITICAL',
+    title: 'Thanh toán tiền mặt cho hóa đơn thuê mặt bằng trên 20 triệu',
+    description: 'Phát hiện phiếu chi PC-0101 chi trả 22,000,000 VND bằng tiền mặt cho chủ nhà để thuê cửa hàng kinh doanh. Hộ kinh doanh kê khai áp dụng nộp thuế trực tiếp vẫn cần có chứng từ thanh toán không dùng tiền mặt đối với các khoản chi phí mua vào từ 20 triệu để làm cơ sở chứng minh nguồn tiền hợp pháp và giảm trừ nghĩa vụ nếu có.',
+    lawBasis: 'Thông tư 40/2021/TT-BTC & Nghị định 125/2020/NĐ-CP',
+    affectedAccount: 'Sổ S3 - Chi phí kinh doanh',
+    affectedValue: 22000000,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động sửa: Cập nhật chứng từ đính kèm sang Ủy nhiệm chi (UNC) ngân hàng',
+    fixData: {
+      action: 'REPLACE_ACCOUNT'
+    }
+  },
+  {
+    id: 'iss-202',
+    level: 'WARNING',
+    title: 'Sai lệch số lượng tồn kho giữa Sổ nhập kho vật liệu và Sổ chi tiết doanh thu',
+    description: 'Sản phẩm "Nước giải khát đóng chai" bán ra theo Hóa đơn HD-00045 ghi nhận số lượng 120 thùng, nhưng Sổ chi tiết vật liệu dụng cụ (Sổ S2) chỉ ghi nhận nhập kho 80 thùng và không có tồn kho đầu kỳ. Sai lệch này dẫn đến âm kho lý thuyết.',
+    lawBasis: 'Quy định lập Sổ S2 ban hành kèm theo Thông tư 88/2021/TT-BTC',
+    affectedAccount: 'Sổ S2 - Chi tiết vật liệu, sản phẩm, hàng hóa',
+    affectedValue: 40,
+    status: 'ACTIVE',
+    autoFixText: 'Tự động sửa: Khởi tạo phiếu nhập bổ sung cho lô hàng nhập ngày 05/05/2026',
+    fixData: {
+      action: 'SPLIT_TRANSACTION'
+    }
+  }
+];
+
+export const MOCK_TRIAL_BALANCE_TT133: TrialBalanceItem[] = [
+  { accountNumber: '1111', accountName: 'Tiền mặt Việt Nam Đồng', openingDebit: 120000000, openingCredit: 0, periodDebit: 340000000, periodCredit: 290000000, closingDebit: 170000000, closingCredit: 0 },
+  { accountNumber: '1121', accountName: 'Tiền gửi Ngân hàng thương mại', openingDebit: 450000000, openingCredit: 0, periodDebit: 980000000, periodCredit: 650000000, closingDebit: 780000000, closingCredit: 0 },
+  { accountNumber: '131', accountName: 'Phải thu khách hàng', openingDebit: 85000000, openingCredit: 0, periodDebit: 1250000000, periodCredit: 1100000000, closingDebit: 235000000, closingCredit: 0 },
+  { accountNumber: '1331', accountName: 'Thuế GTGT đầu vào được khấu trừ', openingDebit: 12500000, openingCredit: 0, periodDebit: 78000000, periodCredit: 82500000, closingDebit: 8000000, closingCredit: 0 },
+  { accountNumber: '156', accountName: 'Hàng hóa mua vào', openingDebit: 210000000, openingCredit: 0, periodDebit: 480000000, periodCredit: 520000000, closingDebit: 170000000, closingCredit: 0 },
+  { accountNumber: '331', accountName: 'Phải trả người bán', openingDebit: 0, openingCredit: 45000000, periodDebit: 580000000, periodCredit: 620000000, closingDebit: 0, closingCredit: 85000000 },
+  { accountNumber: '33311', accountName: 'Thuế GTGT đầu ra phải nộp', openingDebit: 0, openingCredit: 15200000, periodDebit: 82500000, periodCredit: 125000000, closingDebit: 0, closingCredit: 57700000 },
+  { accountNumber: '5111', accountName: 'Doanh thu bán hàng hóa, dịch vụ', openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 1250000000, closingDebit: 0, closingCredit: 1250000000 },
+  { accountNumber: '6422', accountName: 'Chi phí quản lý doanh nghiệp (TT133)', openingDebit: 0, openingCredit: 0, periodDebit: 622400000, periodCredit: 0, closingDebit: 622400000, closingCredit: 0 },
+  { accountNumber: '6427', accountName: 'Chi phí dịch vụ mua ngoài (Sai chế độ)', openingDebit: 0, openingCredit: 0, periodDebit: 12800000, periodCredit: 0, closingDebit: 12800000, closingCredit: 0 }
+];
+
+export const MOCK_TRIAL_BALANCE_TT88: TrialBalanceItem[] = [
+  { accountNumber: 'Sổ S1', accountName: 'Doanh thu bán hàng hóa, dịch vụ', openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 185000000, closingDebit: 0, closingCredit: 185000000 },
+  { accountNumber: 'Sổ S2', accountName: 'Vật liệu, dụng cụ, sản phẩm, hàng hóa', openingDebit: 15000000, openingCredit: 0, periodDebit: 45000000, periodCredit: 38000000, closingDebit: 22000000, closingCredit: 0 },
+  { accountNumber: 'Sổ S3', accountName: 'Chi phí sản xuất, kinh doanh', openingDebit: 0, openingCredit: 0, periodDebit: 32500000, periodCredit: 0, closingDebit: 32500000, closingCredit: 0 },
+  { accountNumber: 'Sổ S4', accountName: 'Tình hình thực hiện nghĩa vụ thuế', openingDebit: 0, openingCredit: 9200000, periodDebit: 9200000, periodCredit: 3700000, closingDebit: 0, closingCredit: 3700000 }
+];
+
+export const MOCK_GDT_RECEIPTS: Record<string, GdtReceipt> = {
+  't-001': {
+    receiptNumber: 'GD-2026-05-998811',
+    receivedDate: '26/05/2026 19:10:45',
+    statusText: 'ĐÃ CHẤP NHẬN TỜ KHAI',
+    taxCode: '0109876543',
+    companyName: 'Công ty TNHH Giải Pháp Công Nghệ Viễn Đông',
+    declarationType: 'Tờ khai thuế Giá trị gia tăng (Mẫu 01/GTGT)',
+    period: 'Tháng 04/2026',
+    xmlHash: 'E8A9F3C1D0B7E6F4A2B8C3D9E0A1F2C3B4A5D6E7',
+    gdtCode: 'QTN-0100 (Chi cục Thuế Quận Cầu Giấy)',
+    paymentCode: 'GNT-2026-05-883391',
+    acceptanceMessage: 'Thông báo số 18839/TB-TCT: Tổng cục Thuế Việt Nam thông báo chấp nhận Hồ sơ khai thuế điện tử của NNT. Hồ sơ hợp lệ và đã ghi nhận nghĩa vụ thuế GTGT phải nộp là 2,500,000 VND vào NSNN.'
+  },
+  't-002': {
+    receiptNumber: 'GD-2026-05-998822',
+    receivedDate: '26/05/2026 19:11:12',
+    statusText: 'ĐÃ CHẤP NHẬN TỜ KHAI',
+    taxCode: '0311223344',
+    companyName: 'Hộ Kinh Doanh Tiệm Bánh & Cà Phê Horizon',
+    declarationType: 'Tờ khai thuế Hộ kinh doanh (Mẫu 01/CNKD)',
+    period: 'Quý 2/2026',
+    xmlHash: 'FA2B8C3D9E0A1F2C3B4A5D6E7E8A9F3C1D0B7E6F',
+    gdtCode: 'QTN-0300 (Chi cục Thuế Quận 1 - TP.HCM)',
+    paymentCode: 'GNT-2026-05-883392',
+    acceptanceMessage: 'Thông báo số 18840/TB-TCT: Tổng cục Thuế Việt Nam thông báo chấp nhận Hồ sơ khai thuế điện tử của NNT. Hồ sơ hợp lệ và đã ghi nhận nghĩa vụ thuế phải nộp (1.5% GTGT + 0.5% TNCN) vào NSNN.'
+  }
+};
+

@@ -43,7 +43,18 @@ export default function App() {
     reportPeriodValue, setReportPeriodValue,
     isGeneratingReport,
     generatedReportSummary,
-    handleCalculateDynamicReport
+    handleCalculateDynamicReport,
+    accountingFileName,
+    accountingAuditStatus,
+    accountingAuditIssues,
+    trialBalanceData,
+    filingStep, setFilingStep,
+    filingStatus, setFilingStatus,
+    gdtReceipt, setGdtReceipt,
+    handleRunAccountingAudit,
+    handleFixAuditIssue,
+    handleUploadAccountingFile,
+    handleSimulateGdtFiling
   } = smartTax;
 
   // Derived data
@@ -306,6 +317,10 @@ export default function App() {
               ocrParsingStatus={ocrParsingStatus}
               uploadedFileName={uploadedFileName}
               newOcrResult={newOcrResult}
+              accountingFileName={accountingFileName}
+              accountingAuditStatus={accountingAuditStatus}
+              trialBalanceData={trialBalanceData}
+              handleUploadAccountingFile={handleUploadAccountingFile}
             />
           )}
 
@@ -313,6 +328,12 @@ export default function App() {
             <AccountingView 
               currentInvoices={currentInvoices}
               currentJournals={currentJournals}
+              tenant={tenant}
+              accountingFileName={accountingFileName}
+              accountingAuditStatus={accountingAuditStatus}
+              accountingAuditIssues={accountingAuditIssues}
+              handleRunAccountingAudit={handleRunAccountingAudit}
+              handleFixAuditIssue={handleFixAuditIssue}
             />
           )}
 
@@ -337,6 +358,15 @@ export default function App() {
               handleCalculateDynamicReport={handleCalculateDynamicReport}
               generatedReportSummary={generatedReportSummary}
               handleDownloadXml={handleDownloadXml}
+              accountingFileName={accountingFileName}
+              accountingAuditIssues={accountingAuditIssues}
+              filingStep={filingStep}
+              setFilingStep={setFilingStep}
+              filingStatus={filingStatus}
+              setFilingStatus={setFilingStatus}
+              gdtReceipt={gdtReceipt}
+              setGdtReceipt={setGdtReceipt}
+              handleSimulateGdtFiling={handleSimulateGdtFiling}
             />
           )}
 
