@@ -30,6 +30,20 @@
   --radius-xl: 28px;
 }
 
+[data-theme='light'] {
+  --bg-base: #f3f4f8;
+  --surface-card: #ffffff;
+  --surface-card-elevated: #f9fafc;
+  --surface-hover: #eaeef6;
+  
+  /* Typography & Colors */
+  --text-main: #12141c;
+  --text-secondary: #4a5068;
+  --text-muted: #7e8494;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.14);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

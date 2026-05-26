@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Building2, LogOut } from 'lucide-react';
+import { Sparkles, Building2, LogOut, Sun, Moon } from 'lucide-react';
 import type { Tenant } from '../../mockData';
 
 interface HeaderProps {
@@ -9,6 +9,8 @@ interface HeaderProps {
   currentTenant: Tenant;
   userType: 'SME' | 'HOUSEHOLD' | null;
   logoutUser: () => void;
+  theme: 'dark' | 'light';
+  setTheme: (theme: 'dark' | 'light') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,7 +19,9 @@ export const Header: React.FC<HeaderProps> = ({
   tenants,
   currentTenant,
   userType,
-  logoutUser
+  logoutUser,
+  theme,
+  setTheme
 }) => {
   return (
     <header className="premium-header">
@@ -84,6 +88,30 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
           
+          {/* Theme Toggle Button */}
+          <button 
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            title={theme === 'dark' ? "Chuyển sang Giao diện Sáng" : "Chuyển sang Giao diện Tối"}
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: theme === 'dark' ? 'var(--accent-lime)' : 'var(--accent-purple)', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: '6px',
+              marginLeft: '8px',
+              borderRadius: '50%',
+              backgroundColor: theme === 'dark' ? 'rgba(204,255,0,0.05)' : 'rgba(157,0,255,0.05)',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = theme === 'dark' ? 'rgba(204,255,0,0.15)' : 'rgba(157,0,255,0.15)')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = theme === 'dark' ? 'rgba(204,255,0,0.05)' : 'rgba(157,0,255,0.05)')}
+          >
+            {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+          </button>
+
           {/* Logout Button */}
           <button 
             onClick={logoutUser}

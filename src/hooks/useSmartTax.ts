@@ -28,6 +28,21 @@ export interface ReportSummary {
 }
 
 export const useSmartTax = () => {
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('smarttax_theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+    }
+    return 'dark';
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('smarttax_theme', theme);
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, [theme]);
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const raw = sessionStorage.getItem('smarttax_user_auth');
@@ -673,6 +688,10 @@ export const useSmartTax = () => {
     autopilotLogs,
     showZaloNotification,
     setShowZaloNotification,
-    handleRunAutopilotSimulation
+    handleRunAutopilotSimulation,
+
+    // Theme toggle
+    theme,
+    setTheme
   };
 };

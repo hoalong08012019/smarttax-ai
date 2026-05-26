@@ -78,7 +78,9 @@ export default function App() {
     autopilotLogs,
     showZaloNotification,
     setShowZaloNotification,
-    handleRunAutopilotSimulation
+    handleRunAutopilotSimulation,
+    theme,
+    setTheme
   } = smartTax;
 
   // Derived data
@@ -312,6 +314,8 @@ export default function App() {
         currentTenant={tenant}
         userType={userType}
         logoutUser={logoutUser}
+        theme={theme}
+        setTheme={setTheme}
       />
 
       <div className="regime-banner">
