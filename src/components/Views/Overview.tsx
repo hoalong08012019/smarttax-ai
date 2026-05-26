@@ -4,7 +4,8 @@ import {
   ArrowDownLeft, 
   ShieldCheck, 
   AlertTriangle, 
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
 import type { Tenant, RiskAlert } from '../../mockData';
 import { formatCurrency } from '../../utils/formatters';
@@ -24,6 +25,96 @@ export const Overview: React.FC<OverviewProps> = ({
 }) => {
   return (
     <div className="animate-fade-in">
+      {/* QUICK WORKFLOW GUIDE FOR NON-TECH USERS */}
+      <div className="content-card" style={{ 
+        marginBottom: '24px', 
+        border: '1px solid rgba(204,255,0,0.25)',
+        background: 'linear-gradient(135deg, rgba(30,35,20,0.4) 0%, rgba(10,10,12,0.8) 100%)',
+        padding: '20px'
+      }}>
+        <h2 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--accent-lime)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Sparkles size={16} />
+          <span>Bản Chỉ Dẫn Quy Trình Kê Khai & Tối Ưu Thuế Tự Động</span>
+        </h2>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+          Chào mừng bạn đến với SmartTax.AI! Vui lòng thực hiện tuần tự qua 4 bước đơn giản dưới đây để hoàn tất nghĩa vụ thuế. Kế toán trưởng AI sẽ tự động xử lý số liệu cho bạn.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+          {[
+            {
+              step: 1,
+              title: '1. Nạp Hóa Đơn & Sao Kê',
+              desc: 'Tải tệp hóa đơn bán ra/mua vào hoặc sao kê ngân hàng. AI sẽ tự động định khoản vào sổ cái.',
+              btnText: 'Tới màn hình Nạp',
+              tab: 'sync',
+              color: 'var(--accent-cyan)'
+            },
+            {
+              step: 2,
+              title: '2. Kiểm Tra Sổ Sách',
+              desc: 'AI tự rà soát toàn bộ lỗi hạch toán kế toán và cho phép bạn sửa nhanh chỉ bằng 1 nút bấm.',
+              btnText: 'Tới màn hình Kiểm tra',
+              tab: 'accounting',
+              color: 'var(--accent-purple)'
+            },
+            {
+              step: 3,
+              title: '3. Kiểm Soát Rủi Ro Thuế',
+              desc: 'Đối chiếu chéo âm quỹ tiền mặt, tối ưu lương nhân viên và rà soát doanh nghiệp rủi ro (GDT).',
+              btnText: 'Tới màn hình Tối ưu',
+              tab: 'radar',
+              color: 'var(--accent-amber)'
+            },
+            {
+              step: 4,
+              title: '4. Ký Số & Nộp Thuế',
+              desc: 'Kiểm tra tờ khai thuế, ký số từ xa không cắm USB Token (Cloud HSM) và nộp trực tiếp sang GDT.',
+              btnText: 'Tới màn hình Nộp',
+              tab: 'reporting',
+              color: 'var(--accent-lime)'
+            }
+          ].map(item => (
+            <div key={item.step} style={{ 
+              backgroundColor: 'rgba(255,255,255,0.02)', 
+              border: '1px solid rgba(255,255,255,0.05)', 
+              borderRadius: '12px', 
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              transition: 'all 0.2s',
+              cursor: 'pointer'
+            }}
+            onClick={() => setActiveTab(item.tab)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+              e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+            }}
+            >
+              <div>
+                <span style={{ fontSize: '9px', fontWeight: 800, color: item.color, display: 'block', marginBottom: '8px' }}>BƯỚC LÀM VIỆC {item.step}</span>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff', marginBottom: '6px' }}>{item.title}</h4>
+                <p style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '12px' }}>{item.desc}</p>
+              </div>
+              <button 
+                className="btn-secondary" 
+                style={{ width: '100%', padding: '6px', fontSize: '10px', justifyContent: 'center', borderColor: 'rgba(255,255,255,0.1)', color: '#ffffff', pointerEvents: 'none' }}
+              >
+                <span>{item.btnText}</span>
+                <ArrowRight size={10} style={{ marginLeft: '4px' }} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 4-Column Metric Grid */}
       <div className="metrics-grid">
         <div className="metric-card">
