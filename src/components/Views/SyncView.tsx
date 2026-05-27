@@ -35,6 +35,8 @@ interface SyncViewProps {
   bankReconStatus: 'IDLE' | 'MATCHING' | 'COMPLETED';
   handleUploadBankStatement: (name: string) => void;
   handleAutoMatchBankTransactions: () => void;
+  handleRealInvoiceUpload: (file: File) => void;
+  handleRealBankStatementUpload: (file: File) => void;
 }
 
 export const SyncView: React.FC<SyncViewProps> = ({
@@ -53,7 +55,9 @@ export const SyncView: React.FC<SyncViewProps> = ({
   bankTransactions,
   bankReconStatus,
   handleUploadBankStatement,
-  handleAutoMatchBankTransactions
+  handleAutoMatchBankTransactions,
+  handleRealInvoiceUpload,
+  handleRealBankStatementUpload
 }) => {
   const [subTab, setSubTab] = useState<'invoices' | 'accounting' | 'bank'>('invoices');
   const [isUploadingLedger, setIsUploadingLedger] = useState(false);
@@ -157,12 +161,30 @@ export const SyncView: React.FC<SyncViewProps> = ({
               </div>
             </div>
 
-            <div className="upload-zone" style={{ borderStyle: ocrParsingStatus === 'PARSING' ? 'solid' : 'dashed' }}>
+            <div 
+              className="upload-zone" 
+              style={{ borderStyle: ocrParsingStatus === 'PARSING' ? 'solid' : 'dashed', cursor: ocrParsingStatus === 'IDLE' ? 'pointer' : 'default' }}
+              onClick={(e) => {
+                if (ocrParsingStatus === 'IDLE' && (e.target as HTMLElement).tagName !== 'BUTTON') {
+                  document.getElementById('invoice-file-input')?.click();
+                }
+              }}
+            >
+              <input 
+                type="file" 
+                id="invoice-file-input" 
+                accept=".xml,.zip" 
+                style={{ display: 'none' }} 
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleRealInvoiceUpload(file);
+                }} 
+              />
               {ocrParsingStatus === 'IDLE' ? (
                 <div style={{ textAlign: 'center' }}>
                   <Download size={32} color="var(--text-muted)" style={{ marginBottom: '12px' }} />
-                  <p style={{ fontSize: '13px', color: '#ffffff', fontWeight: 600, marginBottom: '4px' }}>Kéo thả file hóa đơn vào đây</p>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px' }}>Hỗ trợ XML (NĐ 123), PDF, JPG</p>
+                  <p style={{ fontSize: '13px', color: '#ffffff', fontWeight: 600, marginBottom: '4px' }}>Kéo thả file hóa đơn hoặc Click để tải lên</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px' }}>Hỗ trợ XML (NĐ 123), tệp Zip hóa đơn</p>
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                     <button onClick={() => handleSimulateFileUpload('HD_MUA_VAO_01.xml', 'INCOMING', 4500000)} className="btn-secondary" style={{ fontSize: '10px' }}>Demo Mua vào</button>
                     <button onClick={() => handleSimulateFileUpload('HD_BAN_RA_99.pdf', 'OUTGOING', 120000000)} className="btn-secondary" style={{ fontSize: '10px' }}>Demo Bán ra</button>
@@ -385,11 +407,29 @@ export const SyncView: React.FC<SyncViewProps> = ({
               </div>
             </div>
 
-            <div className="upload-zone" style={{ borderStyle: isUploadingBank || bankReconStatus === 'MATCHING' ? 'solid' : 'dashed', height: '260px' }}>
+            <div 
+              className="upload-zone" 
+              style={{ borderStyle: isUploadingBank || bankReconStatus === 'MATCHING' ? 'solid' : 'dashed', height: '260px', cursor: !bankFileName && !isUploadingBank ? 'pointer' : 'default' }}
+              onClick={(e) => {
+                if (!bankFileName && !isUploadingBank && (e.target as HTMLElement).tagName !== 'BUTTON' && !(e.target as HTMLElement).closest('button')) {
+                  document.getElementById('bank-file-input')?.click();
+                }
+              }}
+            >
+              <input 
+                type="file" 
+                id="bank-file-input" 
+                accept=".xlsx,.csv" 
+                style={{ display: 'none' }} 
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleRealBankStatementUpload(file);
+                }} 
+              />
               {!bankFileName && !isUploadingBank ? (
                 <div style={{ textAlign: 'center' }}>
                   <Download size={36} color="var(--text-muted)" style={{ marginBottom: '16px' }} />
-                  <p style={{ fontSize: '14px', color: '#ffffff', fontWeight: 700, marginBottom: '6px' }}>Tải lên file Sao kê tài khoản Ngân hàng</p>
+                  <p style={{ fontSize: '14px', color: '#ffffff', fontWeight: 700, marginBottom: '6px' }}>Tải lên file Sao kê tài khoản Ngân hàng hoặc Click</p>
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '20px' }}>Hỗ trợ tệp XLS, XLSX, CSV xuất từ eBanking</p>
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '280px', margin: '0 auto' }}>

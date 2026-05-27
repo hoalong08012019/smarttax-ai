@@ -72,6 +72,8 @@ export default function App() {
     bankReconStatus,
     handleUploadBankStatement,
     handleAutoMatchBankTransactions,
+    handleRealInvoiceUpload,
+    handleRealBankStatementUpload,
     autopilotEnabled,
     setAutopilotEnabled,
     autopilotStatus,
@@ -203,61 +205,74 @@ export default function App() {
   const [customQuestionInput, setCustomQuestionInput] = React.useState('');
   const [selectedEmbeddedSourceId, setSelectedEmbeddedSourceId] = React.useState('src-luat-38');
 
-  const handleSendCustomQuestion = (e: React.FormEvent) => {
+  const handleSendCustomQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customQuestionInput.trim()) return;
     const userQ = customQuestionInput.trim();
     setChatHistory(prev => [...prev, { sender: 'USER', text: userQ }]);
     setCustomQuestionInput('');
     
-    // Simulate Thinking/Searching State
-    setTimeout(() => {
-      const qLower = userQ.toLowerCase();
-      
-      // Advanced Keyword Search & Scoring
-      let bestMatch = null;
-      let highestScore = 0;
-
-      MOCK_QA_KNOWLEDGE.forEach(item => {
-        let score = 0;
-        const keywords = item.tags.map(t => t.toLowerCase());
-        
-        // Match tags
-        keywords.forEach(kw => { if (qLower.includes(kw)) score += 5; });
-        // Match specific high-value words
-        if (qLower.includes('thuế')) score += 1;
-        if (qLower.includes('dòng tiền') || qLower.includes('tiền')) score += 2;
-        if (qLower.includes('hạn') || qLower.includes('ngày')) score += 2;
-        if (qLower.includes('hạch toán')) score += 3;
-        
-        if (score > highestScore) {
-          highestScore = score;
-          bestMatch = item;
-        }
+    try {
+      const formData = new FormData();
+      formData.append('question', userQ);
+      const res = await fetch('http://127.0.0.1:8000/api/advisor/chat', {
+        method: 'POST',
+        body: formData
       });
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+      setChatHistory(prev => [...prev, { sender: 'AI', text: data.answer, citation: data.citation }]);
+    } catch (err) {
+      console.warn("Backend offline, falling back to local chat simulation...", err);
+      // Simulate Thinking/Searching State
+      setTimeout(() => {
+        const qLower = userQ.toLowerCase();
+        
+        // Advanced Keyword Search & Scoring
+        let bestMatch = null;
+        let highestScore = 0;
 
-      let responseText = '';
-      let citation = '';
+        MOCK_QA_KNOWLEDGE.forEach(item => {
+          let score = 0;
+          const keywords = item.tags.map(t => t.toLowerCase());
+          
+          // Match tags
+          keywords.forEach(kw => { if (qLower.includes(kw)) score += 5; });
+          // Match specific high-value words
+          if (qLower.includes('thuế')) score += 1;
+          if (qLower.includes('dòng tiền') || qLower.includes('tiền')) score += 2;
+          if (qLower.includes('hạn') || qLower.includes('ngày')) score += 2;
+          if (qLower.includes('hạch toán')) score += 3;
+          
+          if (score > highestScore) {
+            highestScore = score;
+            bestMatch = item;
+          }
+        });
 
-      if (bestMatch && highestScore > 3) {
-        responseText = `🔍 **Phân tích RAG (Dữ liệu xác thực)**:\n\n${(bestMatch as any).shortAnswer}\n\n${(bestMatch as any).fullAnalysis}\n\n💡 **Lời khuyên từ SmartTax AI**: Dựa trên hồ sơ của bạn, chúng tôi khuyến nghị rà soát ngay các chứng từ liên quan để đảm bảo tính nhất quán.`;
-        citation = (bestMatch as any).legalCitation;
-      } else {
-        // Smart Fallback based on context
-        if (qLower.includes('thuế') || qLower.includes('gtgt')) {
-          responseText = '💡 **Hệ thống chuyên gia AI**: Về vấn đề thuế GTGT, theo **Thông tư 80/2021/TT-BTC**, bạn cần lưu ý việc kê khai đúng kỳ (tháng/quý) và đảm bảo hóa đơn đầu vào có đầy đủ chữ ký số hợp lệ. Nếu đây là chi phí trên 20 triệu, bắt buộc phải có chứng từ thanh toán không dùng tiền mặt.';
-          citation = 'Thông tư 80/2021/TT-BTC';
-        } else if (qLower.includes('tiền') || qLower.includes('dòng tiền')) {
-          responseText = '💡 **Hệ thống chuyên gia AI**: Theo giáo trình **Học viện Tài chính**, việc quản trị dòng tiền yêu cầu bạn theo dõi sát sao chu kỳ chuyển đổi tiền mặt (CCC). Bạn nên cân đối giữa nợ phải thu và nợ phải trả để tránh rủi ro mất thanh khoản trong ngắn hạn.';
-          citation = 'Giáo trình Quản trị Tài chính - Học viện Tài chính';
+        let responseText = '';
+        let citation = '';
+
+        if (bestMatch && highestScore > 3) {
+          responseText = `🔍 **Phân tích RAG (Dữ liệu xác thực)**:\n\n${(bestMatch as any).shortAnswer}\n\n${(bestMatch as any).fullAnalysis}\n\n💡 **Lời khuyên từ SmartTax AI**: Dựa trên hồ sơ của bạn, chúng tôi khuyến nghị rà soát ngay các chứng từ liên quan để đảm bảo tính nhất quán.`;
+          citation = (bestMatch as any).legalCitation;
         } else {
-          responseText = '💡 **SmartTax AI**: Tôi đã ghi nhận câu hỏi của bạn. Tuy nhiên, để trả lời chính xác nhất, bạn có thể cung cấp thêm chi tiết về loại hình doanh nghiệp hoặc số hiệu thông tư bạn đang quan tâm không? Dữ liệu hiện tại của tôi tập trung vào Luật Quản lý thuế số 38/2019/QH14.';
-          citation = 'Hệ thống tri thức SmartTax';
+          // Smart Fallback based on context
+          if (qLower.includes('thuế') || qLower.includes('gtgt')) {
+            responseText = '💡 **Hệ thống chuyên gia AI**: Về vấn đề thuế GTGT, theo **Thông tư 80/2021/TT-BTC**, bạn cần lưu ý việc kê khai đúng kỳ (tháng/quý) và đảm bảo hóa đơn đầu vào có đầy đủ chữ ký số hợp lệ. Nếu đây là chi phí trên 20 triệu, bắt buộc phải có chứng từ thanh toán không dùng tiền mặt.';
+            citation = 'Thông tư 80/2021/TT-BTC';
+          } else if (qLower.includes('tiền') || qLower.includes('dòng tiền')) {
+            responseText = '💡 **Hệ thống chuyên gia AI**: Theo giáo trình **Học viện Tài chính**, việc quản trị dòng tiền yêu cầu bạn theo dõi sát sao chu kỳ chuyển đổi tiền mặt (CCC). Bạn nên cân đối giữa nợ phải thu và nợ phải trả để tránh rủi ro mất thanh khoản trong ngắn hạn.';
+            citation = 'Giáo trình Quản trị Tài chính - Học viện Tài chính';
+          } else {
+            responseText = '💡 **SmartTax AI**: Tôi đã ghi nhận câu hỏi của bạn. Tuy nhiên, để trả lời chính xác nhất, bạn có thể cung cấp thêm chi tiết về loại hình doanh nghiệp hoặc số hiệu thông tư bạn đang quan tâm không? Dữ liệu hiện tại của tôi tập trung vào Luật Quản lý thuế số 38/2019/QH14.';
+            citation = 'Hệ thống tri thức SmartTax';
+          }
         }
-      }
 
-      setChatHistory(prev => [...prev, { sender: 'AI', text: responseText, citation }]);
-    }, 1200);
+        setChatHistory(prev => [...prev, { sender: 'AI', text: responseText, citation }]);
+      }, 1200);
+    }
   };
 
   const handleDownloadXml = () => {
@@ -365,6 +380,8 @@ export default function App() {
               bankReconStatus={bankReconStatus}
               handleUploadBankStatement={handleUploadBankStatement}
               handleAutoMatchBankTransactions={handleAutoMatchBankTransactions}
+              handleRealInvoiceUpload={handleRealInvoiceUpload}
+              handleRealBankStatementUpload={handleRealBankStatementUpload}
             />
           )}
 

@@ -591,9 +591,187 @@ export const useSmartTax = () => {
     }, 1500);
   }, [activeTenantId, tenant.accountingRegime]);
 
-  const handleRunAutopilotSimulation = useCallback(() => {
+  const handleRealInvoiceUpload = async (file: File) => {
+    setUploadedFileName(file.name);
+    setOcrParsingStatus('PARSING');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('http://127.0.0.1:8000/api/invoices/upload-zip', {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+      if (data.success && data.invoices && data.invoices.length > 0) {
+        const newInvs = data.invoices.map((inv: any, index: number) => ({
+          id: `inv-real-${Date.now()}-${index}`,
+          type: inv.type || 'INCOMING',
+          symbol: inv.symbol || '1C26TCC',
+          number: inv.number || '00000000',
+          issueDate: inv.issue_date || new Date().toLocaleDateString('vi-VN'),
+          counterpartTaxCode: inv.seller_tax_code || inv.counterpartTaxCode || '0000000000',
+          counterpartName: inv.seller_name || inv.counterpartName || 'Chưa rõ đối tác',
+          preTaxAmount: inv.pre_tax_amount || 0,
+          vatRate: inv.vat_rate || '10%',
+          vatAmount: inv.vat_amount || 0,
+          totalAmount: inv.total_amount || 0,
+          ocrConfidence: inv.ocr_confidence || 1.0,
+          riskStatus: inv.status || 'SAFE',
+          riskFlags: inv.risk_flags || [],
+          suggestedDebitAcc: tenant.accountingRegime === 'TT133' ? '6422' : 'Sổ chi phí',
+          suggestedCreditAcc: tenant.accountingRegime === 'TT133' ? '331' : 'Thanh toán chuyển khoản'
+        }));
+        
+        setLocalInvoices(prev => ({
+          ...prev,
+          [activeTenantId]: [...newInvs, ...(prev[activeTenantId] || [])]
+        }));
+        
+        const newJournals = newInvs.map((inv: any, index: number) => ({
+          id: `je-real-${Date.now()}-${index}`,
+          date: inv.issueDate,
+          voucherCode: `GDT-${inv.number}`,
+          description: `Tự động hạch toán hóa đơn điện tử thực số ${inv.number} (${inv.counterpartName})`,
+          debitAccount: inv.suggestedDebitAcc,
+          creditAccount: inv.suggestedCreditAcc,
+          amount: inv.totalAmount,
+          isAutomated: true
+        }));
+        
+        setLocalJournals(prev => ({
+          ...prev,
+          [activeTenantId]: [...newJournals, ...(prev[activeTenantId] || [])]
+        }));
+
+        setNewOcrResult(newInvs[0]);
+        setOcrParsingStatus('SUCCESS');
+      } else {
+        throw new Error('No invoices parsed');
+      }
+    } catch (err) {
+      console.warn("Backend offline, falling back to mock invoice upload...", err);
+      setTimeout(() => {
+        const amount = file.name.includes('BAN_RA') ? 120000000 : 4500000;
+        const type = file.name.includes('BAN_RA') ? 'OUTGOING' : 'INCOMING';
+        const parsed: Partial<Invoice> = {
+          symbol: type === 'INCOMING' ? '1C26TMM' : '1C26TNN',
+          number: `0000${Math.floor(5000 + Math.random() * 4999)}`,
+          counterpartName: type === 'INCOMING' ? 'Công ty Cổ phần Đầu tư Thiết bị Văn phòng Cao Cấp (Simulation)' : 'Hợp đồng Tư vấn Giải pháp Phần mềm Kế toán (Simulation)',
+          counterpartTaxCode: '0104445556',
+          preTaxAmount: amount,
+          vatRate: '10%',
+          vatAmount: amount * 0.1,
+          totalAmount: amount * 1.1,
+          ocrConfidence: 0.992,
+          type: type,
+          suggestedDebitAcc: tenant.accountingRegime === 'TT133' ? (type === 'INCOMING' ? '242 / 6422' : '131') : 'Sổ chi phí',
+          suggestedCreditAcc: tenant.accountingRegime === 'TT133' ? (type === 'INCOMING' ? '331' : '5111') : 'Doanh thu'
+        };
+        setNewOcrResult(parsed);
+        setOcrParsingStatus('SUCCESS');
+
+        const fullInv: Invoice = {
+          id: `inv-ocr-${Date.now()}`,
+          type: type,
+          symbol: parsed.symbol!,
+          number: parsed.number!,
+          issueDate: new Date().toLocaleDateString('vi-VN'),
+          counterpartTaxCode: parsed.counterpartTaxCode!,
+          counterpartName: parsed.counterpartName!,
+          preTaxAmount: parsed.preTaxAmount!,
+          vatRate: parsed.vatRate!,
+          vatAmount: parsed.vatAmount!,
+          totalAmount: parsed.totalAmount!,
+          ocrConfidence: parsed.ocrConfidence!,
+          riskStatus: 'SAFE',
+          riskFlags: [],
+          suggestedDebitAcc: parsed.suggestedDebitAcc!,
+          suggestedCreditAcc: parsed.suggestedCreditAcc!
+        };
+
+        setLocalInvoices(prev => ({ ...prev, [activeTenantId]: [fullInv, ...(prev[activeTenantId] || [])] }));
+
+        const autoJe: JournalEntry = {
+          id: `je-ocr-${Date.now()}`,
+          date: fullInv.issueDate,
+          voucherCode: `OCR-${fullInv.number}`,
+          description: `Hạch toán hóa đơn điện tử OCR tải lên: ${fullInv.counterpartName} (Simulation)`,
+          debitAccount: fullInv.suggestedDebitAcc,
+          creditAccount: fullInv.suggestedCreditAcc,
+          amount: fullInv.totalAmount,
+          isAutomated: true
+        };
+
+        setLocalJournals(prev => ({ ...prev, [activeTenantId]: [autoJe, ...(prev[activeTenantId] || [])] }));
+      }, 1500);
+    }
+  };
+
+  const handleRealBankStatementUpload = async (file: File) => {
+    setBankFileName(file.name);
+    setBankReconStatus('MATCHING');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('http://127.0.0.1:8000/api/bank/upload-statement', {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+      if (data.success && data.transactions) {
+        const txs = data.transactions.map((tx: any, idx: number) => ({
+          id: `tx-real-${Date.now()}-${idx}`,
+          date: tx.date || new Date().toLocaleDateString('vi-VN'),
+          referenceNumber: tx.reference_number || `UNC-${Math.floor(1000 + Math.random()*9000)}`,
+          description: tx.description || 'Giao dịch ngân hàng',
+          amount: tx.amount || 0,
+          type: tx.type === 'DEBIT' ? 'WITHDRAWAL' as const : 'DEPOSIT' as const,
+          matchStatus: 'UNMATCHED' as const,
+          suggestedLedgerEntry: {
+            debitAccount: tx.type === 'DEBIT' ? '331' : '1121',
+            creditAccount: tx.type === 'DEBIT' ? '1121' : '131',
+            description: tx.description || 'Đối soát tự động'
+          }
+        }));
+        setBankTransactions(txs);
+        setBankReconStatus('IDLE');
+      } else {
+        throw new Error('No transactions parsed');
+      }
+    } catch (err) {
+      console.warn("Backend offline, falling back to mock bank statement...", err);
+      setTimeout(() => {
+        setBankTransactions(
+          tenant.accountingRegime === 'TT133' 
+            ? MOCK_BANK_TRANSACTIONS_TT133 
+            : MOCK_BANK_TRANSACTIONS_TT88
+        );
+        setBankReconStatus('IDLE');
+      }, 1500);
+    }
+  };
+
+  const handleRunAutopilotSimulation = useCallback(async () => {
     setAutopilotStatus('RUNNING');
     setAutopilotLogs([]);
+
+    try {
+      const formData = new FormData();
+      formData.append('tenant_id', activeTenantId);
+      formData.append('company_name', tenant.companyName);
+      formData.append('tax_code', tenant.taxCode);
+      formData.append('accounting_regime', tenant.accountingRegime);
+      formData.append('period', 'Tháng 04/2026');
+      
+      await fetch('http://127.0.0.1:8000/api/autopilot/run', {
+        method: 'POST',
+        body: formData
+      });
+    } catch (err) {
+      console.warn("Backend offline, skipping Telegram alert dispatch...", err);
+    }
     
     const logs = [
       '[Autopilot Engine] Khởi chạy worker lập lịch tự trị kiểm tra hạn kê khai...',
@@ -604,7 +782,7 @@ export const useSmartTax = () => {
       '[Step 5/6] Kết xuất tệp XML tờ khai GTGT & Ký số từ xa không chạm bằng Cloud HSM... (Thành công)',
       '[Step 6/6] Đang nộp tờ khai lên cổng TVAN thuế và chờ tiếp nhận... (Thành công)',
       '[GDT Gateway] Đã tiếp nhận & Chấp nhận tờ khai điện tử. Trạng thái: CHẤP NHẬN TỜ KHAI.',
-      '[Notification Agent] Đang đồng bộ Zalo API gửi thông báo và biên nhận cho chủ doanh nghiệp...',
+      '[Notification Agent] Đang đồng bộ Telegram API gửi thông báo và biên nhận cho chủ doanh nghiệp...',
       '[Autopilot Engine] Hoàn tất chu kỳ kê khai tự trị! Hệ thống AN TOÀN & TUÂN THỦ.'
     ];
 
@@ -630,7 +808,7 @@ export const useSmartTax = () => {
       }
     }, 450);
 
-  }, [activeTenantId, handleApplyPayrollOptimization, handleInjectCashLoan]);
+  }, [activeTenantId, handleApplyPayrollOptimization, handleInjectCashLoan, tenant]);
 
   return {
     activeTenantId, setActiveTenantId,
@@ -680,6 +858,8 @@ export const useSmartTax = () => {
     bankReconStatus,
     handleUploadBankStatement,
     handleAutoMatchBankTransactions,
+    handleRealInvoiceUpload,
+    handleRealBankStatementUpload,
 
     // Autopilot
     autopilotEnabled,
