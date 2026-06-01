@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440 # 24 giờ
     
     # Supabase / PostgreSQL Credentials
-    SUPABASE_URL: str = "https://your-project.supabase.co"
+    SUPABASE_URL: str = "https://zdfutrckmadorhrmzsaz.supabase.co"
     SUPABASE_KEY: str = "your-supabase-anon-key"
     DATABASE_URL: Optional[str] = None
     
