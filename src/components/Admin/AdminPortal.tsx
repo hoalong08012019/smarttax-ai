@@ -26,6 +26,7 @@ interface AdminPortalProps {
   setAdminSystemPromptOverride: (val: string) => void;
   setActiveTab: (tab: string) => void;
   activeTenantId: string;
+  handleIndex: () => void;
 }
 
 export const AdminPortal: React.FC<AdminPortalProps> = ({
@@ -38,11 +39,11 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
   adminIndexingTitle,
   setAdminIndexingTitle,
   adminIndexingStatus,
-  setAdminIndexingStatus,
   adminSystemPromptOverride,
   setAdminSystemPromptOverride,
   setActiveTab,
-  activeTenantId
+  activeTenantId,
+  handleIndex
 }) => {
   if (!isAdminAuthenticated) {
     return (
@@ -204,13 +205,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
               </div>
 
               <button 
-                onClick={() => {
-                  if (!adminIndexingTitle.trim()) return;
-                  setAdminIndexingStatus('INDEXING');
-                  setTimeout(() => {
-                    setAdminIndexingStatus('SUCCESS');
-                  }, 1200);
-                }}
+                onClick={handleIndex}
                 className="btn-primary"
                 style={{ width: '100%', justifyContent: 'center', padding: '12px', fontSize: '13px' }}
               >

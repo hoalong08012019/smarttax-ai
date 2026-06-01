@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Response
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Optional
 import uvicorn
@@ -8,6 +8,9 @@ import os
 from services.xml_parser import parse_vietnam_invoice_xml, parse_invoices_zip
 from services.bank_parser import parse_bank_excel, parse_bank_csv
 from services.telegram_notify import send_telegram_alert, format_autopilot_telegram_message
+from services.blacklist_scanner import scan_tax_code
+from services.xml_generator import XMLHTKKGenerator
+from services.rag_advisor import generate_text_embedding, search_semantic_knowledge, ask_llm_advisor, index_document_source
 from config import settings
 
 app = FastAPI(
@@ -37,6 +40,7 @@ def read_root():
 async def upload_invoices(file: UploadFile = File(...)):
     """
     Endpoint tiếp nhận file Zip chứa nhiều hóa đơn XML của Tổng cục Thuế hoặc file XML đơn lẻ.
+    Tự động rà soát đối chiếu mã số thuế người bán với danh sách đen (Blacklist GDT).
     """
     content = await file.read()
     filename = file.filename.lower()
@@ -44,6 +48,11 @@ async def upload_invoices(file: UploadFile = File(...)):
     try:
         if filename.endswith('.zip'):
             parsed_invoices = parse_invoices_zip(content)
+            for inv in parsed_invoices:
+                blacklist_info = scan_tax_code(inv.get("seller_tax_code", ""))
+                if blacklist_info:
+                    inv["status"] = "CRITICAL"
+                    inv["risk_flags"] = [f"GDT BLACKLISTED: {blacklist_info['reason']} ({blacklist_info['law_basis']})"]
             return {
                 "success": True,
                 "message": f"Giải nén và phân tích thành công {len(parsed_invoices)} hóa đơn XML từ tệp Zip.",
@@ -52,6 +61,10 @@ async def upload_invoices(file: UploadFile = File(...)):
         elif filename.endswith('.xml'):
             invoice = parse_vietnam_invoice_xml(content)
             invoice["file_name"] = file.filename
+            blacklist_info = scan_tax_code(invoice.get("seller_tax_code", ""))
+            if blacklist_info:
+                invoice["status"] = "CRITICAL"
+                invoice["risk_flags"] = [f"GDT BLACKLISTED: {blacklist_info['reason']} ({blacklist_info['law_basis']})"]
             return {
                 "success": True,
                 "message": "Phân tích hóa đơn XML đơn lẻ thành công.",
@@ -135,31 +148,86 @@ async def run_autopilot(
 @app.post("/api/advisor/chat")
 async def advisor_chat(question: str = Form(...)):
     """
-    Endpoint RAG xử lý hỏi đáp luật thuế (Hỗ trợ fallback thông minh).
+    Endpoint RAG xử lý hỏi đáp luật thuế (Tìm kiếm ngữ nghĩa pgvector + Tổng hợp LLM).
     """
-    q_lower = question.lower()
-    
-    # Các câu hỏi pháp lý thuế thường gặp (fallback tri thức nhanh)
-    knowledge_base = {
-        "thuế": "Căn cứ Luật Quản lý thuế số 38/2019/QH14, thời hạn nộp tờ khai thuế GTGT theo tháng chậm nhất là ngày 20 của tháng tiếp theo. Theo quý chậm nhất là ngày cuối cùng của tháng đầu quý tiếp theo.",
-        "hóa đơn": "Theo Nghị định 123/2020/NĐ-CP, thời điểm lập hóa đơn đối với bán hàng hóa là thời điểm chuyển giao quyền sở hữu hoặc sử dụng, không phân biệt đã thu được tiền hay chưa.",
-        "bảng lương": "Theo Thông tư 111/2013/TT-BTC, các khoản phụ cấp trang phục dưới 5M/năm, ăn trưa dưới 730k/tháng và tiền điện thoại phục vụ công tác được miễn thuế TNCN và không tính đóng BHXH bắt buộc.",
-        "giao dịch liên kết": "Căn cứ Nghị định 132/2020/NĐ-CP, tổng chi phí lãi vay được trừ khi xác định thu nhập chịu thuế TNDN đối với doanh nghiệp có giao dịch liên kết không vượt quá 30% tổng chỉ số EBITDA."
-    }
-    
-    answer = "Cảm ơn bạn đã đặt câu hỏi. SmartTax AI đã ghi nhận yêu cầu và đang liên kết tri thức. Đối với câu hỏi chi tiết về luật thuế hiện hành, vui lòng đảm bảo bạn đã cấu hình Supabase pgvector hoặc OpenAI API Key để kích hoạt tính năng phân tích RAG ngữ nghĩa sâu."
-    citation = "Lõi Tri Thức SmartTax"
-    
-    for key, val in knowledge_base.items():
-        if key in q_lower:
-            answer = f"🔍 **Phân tích Luật Thuế tự động**:\n\n{val}\n\n💡 *Khuyến nghị:* Rà soát toàn bộ các tài liệu chứng từ đi kèm (Hợp đồng, Biên bản nghiệm thu) để đảm bảo tính giải trình khi quyết toán thực tế."
-            citation = "Hệ thống tri thức luật số e-GDT"
-            break
-            
-    return {
-        "answer": answer,
-        "citation": citation
-    }
+    try:
+        # 1. Sinh vector nhúng cho câu hỏi
+        emb = generate_text_embedding(question)
+        
+        # 2. Tìm kiếm các mảnh tri thức tương đồng nhất từ DB
+        matches = search_semantic_knowledge(emb)
+        
+        # 3. Tổng hợp thông tin ngữ cảnh
+        context = "\n\n".join([
+            f"Tài liệu: {m['title']}\nNội dung: {m['content']}" 
+            for m in matches
+        ])
+        
+        # 4. Trích lập câu trả lời từ LLM
+        res = ask_llm_advisor(question, context)
+        return {
+            "answer": res["answer"],
+            "citation": res["citation"]
+        }
+    except Exception as e:
+        logger.error(f"Lỗi hệ thống RAG Chat: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống hỏi đáp: {str(e)}")
+
+@app.post("/api/admin/index-source")
+async def index_knowledge_source(
+    source_id: str = Form(...),
+    title: str = Form(...),
+    content: str = Form(...)
+):
+    """
+    Endpoint nạp văn bản luật mới, tự động băm nhỏ, sinh embeddings và lưu vào pgvector DB.
+    """
+    try:
+        chunks_count = index_document_source(source_id, title, content)
+        return {
+            "success": True,
+            "message": f"Tài liệu đã được băm nhỏ thành công thành {chunks_count} mảnh tri thức và lập chỉ mục vào pgvector DB."
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi lập chỉ mục tài liệu: {str(e)}")
+
+@app.post("/api/reporting/generate-xml")
+async def generate_xml_report(
+    tax_code: str = Form(...),
+    company_name: str = Form(...),
+    accounting_regime: str = Form(...),
+    period: str = Form(...),
+    revenue: float = Form(150000000.0),
+    input_vat: float = Form(12500000.0),
+    carryforward_vat: float = Form(12000000.0)
+):
+    """
+    Sinh tờ khai XML chuẩn HTKK cho doanh nghiệp hoặc hộ kinh doanh và trả về dưới dạng file download.
+    """
+    try:
+        data = {
+            "tax_code": tax_code,
+            "company_name": company_name,
+            "accounting_regime": accounting_regime,
+            "period": period,
+            "revenue": revenue,
+            "input_vat": input_vat,
+            "carryforward_vat": carryforward_vat
+        }
+        xml_content = XMLHTKKGenerator.generate_xml_by_regime(data)
+        
+        filename = f"TKHAI_{accounting_regime.replace('/', '_')}_{tax_code}.xml"
+        
+        return Response(
+            content=xml_content,
+            media_type="application/xml",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi kết xuất tờ khai XML: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

@@ -275,26 +275,58 @@ export default function App() {
     }
   };
 
-  const handleDownloadXml = () => {
-    let xmlContent = MOCK_HTKK_XML_TEMPLATES[selectedDeclarationForm] || '<?xml version="1.0"?><Error>No content</Error>';
-    
-    // Inject dynamic data into XML based on current state
-    if (generatedReportSummary) {
-      xmlContent = xmlContent
-        .replace('<Nam>2026</Nam>', `<Nam>${new Date().getFullYear()}</Nam>`)
-        .replace('<MaSoThue>0109876543</MaSoThue>', `<MaSoThue>${tenant.taxCode}</MaSoThue>`)
-        .replace('<TenNNT>Công ty TNHH Giải Pháp Công Nghệ Viễn Đông</TenNNT>', `<TenNNT>${tenant.companyName}</TenNNT>`)
-        .replace(/<ChiTieu27>.*?<\/ChiTieu27>/, `<ChiTieu27>${generatedReportSummary.totalRevenueBase}</ChiTieu27>`)
-        .replace(/<ChiTieu40>.*?<\/ChiTieu40>/, `<ChiTieu40>${generatedReportSummary.payableVat}</ChiTieu40>`)
-        .replace(/<ThueGTGTPhaiNop>.*?<\/ThueGTGTPhaiNop>/, `<ThueGTGTPhaiNop>${generatedReportSummary.payableVat}</ThueGTGTPhaiNop>`);
-    }
+  const handleDownloadXml = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('tax_code', tenant.taxCode);
+      formData.append('company_name', tenant.companyName);
+      formData.append('accounting_regime', tenant.accountingRegime);
+      formData.append('period', `${reportPeriodType === 'QUARTER' ? 'Quý' : 'Tháng'} ${reportPeriodValue}/${new Date().getFullYear()}`);
+      formData.append('revenue', (generatedReportSummary?.totalRevenueBase || 150000000).toString());
+      formData.append('input_vat', (generatedReportSummary?.totalVatDeductible || 12500000).toString());
+      formData.append('carryforward_vat', '12000000');
 
-    const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `TKHAI_${selectedDeclarationForm.replace('/', '_')}_${tenant.taxCode}.xml`;
-    link.click();
+      const res = await fetch('http://127.0.0.1:8000/api/reporting/generate-xml', {
+        method: 'POST',
+        body: formData
+      });
+      if (!res.ok) throw new Error('API error');
+      
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const contentDisposition = res.headers.get('Content-Disposition');
+      let filename = `TKHAI_${tenant.accountingRegime}_${tenant.taxCode}.xml`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename=(.+)/);
+        if (match) filename = match[1];
+      }
+      
+      link.download = filename;
+      link.click();
+    } catch (err) {
+      console.warn("Backend offline, falling back to local XML template download...", err);
+      let xmlContent = MOCK_HTKK_XML_TEMPLATES[selectedDeclarationForm] || '<?xml version="1.0"?><Error>No content</Error>';
+      
+      if (generatedReportSummary) {
+        xmlContent = xmlContent
+          .replace('<Nam>2026</Nam>', `<Nam>${new Date().getFullYear()}</Nam>`)
+          .replace('<MaSoThue>0109876543</MaSoThue>', `<MaSoThue>${tenant.taxCode}</MaSoThue>`)
+          .replace('<TenNNT>Công ty TNHH Giải Pháp Công Nghệ Viễn Đông</TenNNT>', `<TenNNT>${tenant.companyName}</TenNNT>`)
+          .replace(/<ChiTieu27>.*?<\/ChiTieu27>/, `<ChiTieu27>${generatedReportSummary.totalRevenueBase}</ChiTieu27>`)
+          .replace(/<ChiTieu40>.*?<\/ChiTieu40>/, `<ChiTieu40>${generatedReportSummary.payableVat}</ChiTieu40>`)
+          .replace(/<ThueGTGTPhaiNop>.*?<\/ThueGTGTPhaiNop>/, `<ThueGTGTPhaiNop>${generatedReportSummary.payableVat}</ThueGTGTPhaiNop>`);
+      }
+
+      const blob = new Blob([xmlContent], { type: 'application/xml;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `TKHAI_${selectedDeclarationForm.replace('/', '_')}_${tenant.taxCode}.xml`;
+      link.click();
+    }
   };
 
   // Check for standalone admin view

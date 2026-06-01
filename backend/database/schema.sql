@@ -85,6 +85,23 @@ CREATE TABLE IF NOT EXISTS knowledge_chunks (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 8. Bảng Blacklist MST (Danh sách đen Mã số thuế doanh nghiệp trốn thuế/bỏ trốn)
+CREATE TABLE IF NOT EXISTS blacklist_mst (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tax_code VARCHAR(50) UNIQUE NOT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    reason TEXT,
+    law_basis TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Chèn dữ liệu mẫu các doanh nghiệp rủi ro cao từ Tổng cục Thuế để làm dữ liệu kiểm thử
+INSERT INTO blacklist_mst (tax_code, company_name, reason, law_basis) 
+VALUES 
+('0104445556', 'Công ty TNHH Mua bán Hóa đơn Ma Cao', 'Mua bán hóa đơn khống, không hoạt động tại địa chỉ đăng ký', 'Quyết định 450/QĐ-TCT'),
+('0312456789', 'Công ty TNHH Truyền thông & Quảng cáo Đỉnh Cao', 'Nằm trong danh sách rủi ro trốn thuế cao, mới thành lập dưới 6 tháng phát sinh doanh số bất thường', 'Thông báo 1282/TB-TCT')
+ON CONFLICT (tax_code) DO NOTHING;
+
 -- =========================================================================
 -- CHÍNH SÁCH BẢO MẬT CÔ LẬP KHÁCH HÀNG (ROW-LEVEL SECURITY - RLS)
 -- =========================================================================
@@ -122,3 +139,33 @@ CREATE POLICY journal_tenant_isolation ON journals
 CREATE POLICY bank_tx_tenant_isolation ON bank_transactions 
     FOR ALL 
     USING (tenant_id = (SELECT tenant_id FROM users WHERE id = auth.uid()));
+
+-- 6. Hàm tìm kiếm tương đồng vector (Cosine Similarity) cho pgvector
+CREATE OR REPLACE FUNCTION match_knowledge_chunks (
+  query_embedding VECTOR(1536),
+  match_threshold FLOAT,
+  match_count INT
+)
+RETURNS TABLE (
+  id UUID,
+  source_id VARCHAR,
+  title VARCHAR,
+  content TEXT,
+  similarity FLOAT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    knowledge_chunks.id,
+    knowledge_chunks.source_id,
+    knowledge_chunks.title,
+    knowledge_chunks.content,
+    1 - (knowledge_chunks.embedding <=> query_embedding) AS similarity
+  FROM knowledge_chunks
+  WHERE 1 - (knowledge_chunks.embedding <=> query_embedding) > match_threshold
+  ORDER BY knowledge_chunks.embedding <=> query_embedding
+  LIMIT match_count;
+END;
+$$;
