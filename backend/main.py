@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Response
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Any, Optional
 import uvicorn
@@ -11,6 +11,7 @@ from services.telegram_notify import send_telegram_alert, format_autopilot_teleg
 from services.blacklist_scanner import scan_tax_code
 from services.xml_generator import XMLHTKKGenerator
 from services.rag_advisor import generate_text_embedding, search_semantic_knowledge, ask_llm_advisor, index_document_source
+from auth.supabase_jwt import get_current_tenant_id
 from config import settings
 
 app = FastAPI(
@@ -37,7 +38,10 @@ def read_root():
     }
 
 @app.post("/api/invoices/upload-zip")
-async def upload_invoices(file: UploadFile = File(...)):
+async def upload_invoices(
+    file: UploadFile = File(...),
+    tenant_id: str = Depends(get_current_tenant_id)
+):
     """
     Endpoint tiếp nhận file Zip chứa nhiều hóa đơn XML của Tổng cục Thuế hoặc file XML đơn lẻ.
     Tự động rà soát đối chiếu mã số thuế người bán với danh sách đen (Blacklist GDT).
@@ -77,7 +81,10 @@ async def upload_invoices(file: UploadFile = File(...)):
 
 
 @app.post("/api/bank/upload-statement")
-async def upload_bank_statement(file: UploadFile = File(...)):
+async def upload_bank_statement(
+    file: UploadFile = File(...),
+    tenant_id: str = Depends(get_current_tenant_id)
+):
     """
     Endpoint tiếp nhận tệp Excel (.xlsx) hoặc CSV sao kê tài khoản ngân hàng xuất từ Internet Banking.
     """
@@ -104,13 +111,13 @@ async def upload_bank_statement(file: UploadFile = File(...)):
 @app.post("/api/autopilot/run")
 async def run_autopilot(
     background_tasks: BackgroundTasks,
-    tenant_id: str = Form(...),
     company_name: str = Form(...),
     tax_code: str = Form(...),
     accounting_regime: str = Form(...),
     period: str = Form("Tháng 04/2026"),
     telegram_token: Optional[str] = Form(None),
-    telegram_chat_id: Optional[str] = Form(None)
+    telegram_chat_id: Optional[str] = Form(None),
+    tenant_id: str = Depends(get_current_tenant_id)
 ):
     """
     Kích hoạt tiến trình Kê khai tự trị Autopilot.
@@ -146,7 +153,10 @@ async def run_autopilot(
 
 
 @app.post("/api/advisor/chat")
-async def advisor_chat(question: str = Form(...)):
+async def advisor_chat(
+    question: str = Form(...),
+    tenant_id: str = Depends(get_current_tenant_id)
+):
     """
     Endpoint RAG xử lý hỏi đáp luật thuế (Tìm kiếm ngữ nghĩa pgvector + Tổng hợp LLM).
     """
@@ -177,7 +187,8 @@ async def advisor_chat(question: str = Form(...)):
 async def index_knowledge_source(
     source_id: str = Form(...),
     title: str = Form(...),
-    content: str = Form(...)
+    content: str = Form(...),
+    tenant_id: str = Depends(get_current_tenant_id)
 ):
     """
     Endpoint nạp văn bản luật mới, tự động băm nhỏ, sinh embeddings và lưu vào pgvector DB.
@@ -199,7 +210,8 @@ async def generate_xml_report(
     period: str = Form(...),
     revenue: float = Form(150000000.0),
     input_vat: float = Form(12500000.0),
-    carryforward_vat: float = Form(12000000.0)
+    carryforward_vat: float = Form(12000000.0),
+    tenant_id: str = Depends(get_current_tenant_id)
 ):
     """
     Sinh tờ khai XML chuẩn HTKK cho doanh nghiệp hoặc hộ kinh doanh và trả về dưới dạng file download.

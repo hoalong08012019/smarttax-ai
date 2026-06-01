@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { supabaseSignOut } from '../utils/supabaseAuth';
 import { 
   MOCK_TENANTS, 
   MOCK_INVOICES, 
@@ -92,6 +93,18 @@ export const useSmartTax = () => {
   });
 
   const [activeTab, setActiveTab] = useState<string>('overview');
+
+  const getAuthToken = useCallback((): string => {
+    if (typeof window === 'undefined') return '';
+    const raw = sessionStorage.getItem('smarttax_user_auth');
+    if (!raw) return '';
+    try {
+      const data = JSON.parse(raw);
+      return data.token || '';
+    } catch (e) {
+      return '';
+    }
+  }, []);
   
   const tenant = useMemo(() => {
     return MOCK_TENANTS.find(t => t.id === activeTenantId) || MOCK_TENANTS[0];
@@ -361,11 +374,12 @@ export const useSmartTax = () => {
     }, 2000);
   }, [activeTenantId]);
 
-  const loginWithCredentials = useCallback((tenantId: string, role: 'SME' | 'HOUSEHOLD') => {
+  const loginWithCredentials = useCallback((tenantId: string, role: 'SME' | 'HOUSEHOLD', token?: string) => {
     const sessionData = {
       authenticated: true,
       tenantId,
       userType: role,
+      token: token || (role === 'SME' ? 'u-sme-001' : 'u-hkd-002'),
       expiresAt: Date.now() + 60 * 60 * 1000 // 1 hour
     };
     sessionStorage.setItem('smarttax_user_auth', JSON.stringify(sessionData));
@@ -375,6 +389,15 @@ export const useSmartTax = () => {
   }, []);
 
   const logoutUser = useCallback(() => {
+    const raw = sessionStorage.getItem('smarttax_user_auth');
+    if (raw) {
+      try {
+        const data = JSON.parse(raw);
+        if (data.token) {
+          supabaseSignOut(data.token);
+        }
+      } catch (e) {}
+    }
     sessionStorage.removeItem('smarttax_user_auth');
     setIsAuthenticated(false);
     setUserType(null);
@@ -597,8 +620,13 @@ export const useSmartTax = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('http://127.0.0.1:8000/api/invoices/upload-zip', {
         method: 'POST',
+        headers,
         body: formData
       });
       if (!res.ok) throw new Error('API error');
@@ -714,8 +742,13 @@ export const useSmartTax = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('http://127.0.0.1:8000/api/bank/upload-statement', {
         method: 'POST',
+        headers,
         body: formData
       });
       if (!res.ok) throw new Error('API error');
@@ -765,8 +798,13 @@ export const useSmartTax = () => {
       formData.append('accounting_regime', tenant.accountingRegime);
       formData.append('period', 'Tháng 04/2026');
       
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       await fetch('http://127.0.0.1:8000/api/autopilot/run', {
         method: 'POST',
+        headers,
         body: formData
       });
     } catch (err) {
@@ -843,6 +881,7 @@ export const useSmartTax = () => {
     userType,
     loginWithCredentials,
     logoutUser,
+    getAuthToken,
     
     payrollEmployees,
     internalControlStatus,

@@ -60,6 +60,7 @@ export default function App() {
     userType,
     loginWithCredentials,
     logoutUser,
+    getAuthToken,
     payrollEmployees,
     internalControlStatus,
     internalControlIssues,
@@ -215,8 +216,13 @@ export default function App() {
     try {
       const formData = new FormData();
       formData.append('question', userQ);
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('http://127.0.0.1:8000/api/advisor/chat', {
         method: 'POST',
+        headers,
         body: formData
       });
       if (!res.ok) throw new Error('API error');
@@ -286,8 +292,13 @@ export default function App() {
       formData.append('input_vat', (generatedReportSummary?.totalVatDeductible || 12500000).toString());
       formData.append('carryforward_vat', '12000000');
 
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('http://127.0.0.1:8000/api/reporting/generate-xml', {
         method: 'POST',
+        headers,
         body: formData
       });
       if (!res.ok) throw new Error('API error');

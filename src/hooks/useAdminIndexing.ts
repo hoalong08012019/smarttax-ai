@@ -17,8 +17,19 @@ export const useAdminIndexing = () => {
       formData.append('title', adminIndexingTitle);
       formData.append('content', `Văn bản tài liệu đầy đủ cho ${adminIndexingTitle}. Hướng dẫn thực thi: áp dụng đồng bộ các quy tắc chỉ tiêu tờ khai theo đúng Nghị định 123/2020 và Thông tư 80 của Bộ Tài chính Việt Nam.`);
       
+      const raw = typeof window !== 'undefined' ? sessionStorage.getItem('smarttax_user_auth') : null;
+      let token = '';
+      if (raw) {
+        try {
+          token = JSON.parse(raw).token || '';
+        } catch (e) {}
+      }
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('http://127.0.0.1:8000/api/admin/index-source', {
         method: 'POST',
+        headers,
         body: formData
       });
       if (!res.ok) throw new Error('API error');

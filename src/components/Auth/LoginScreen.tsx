@@ -11,9 +11,10 @@ import {
   X
 } from 'lucide-react';
 import { useDigitalSignature } from '../../hooks/useDigitalSignature';
+import { supabaseSignIn } from '../../utils/supabaseAuth';
 
 interface LoginScreenProps {
-  onLoginSuccess: (tenantId: string, role: 'SME' | 'HOUSEHOLD') => void;
+  onLoginSuccess: (tenantId: string, role: 'SME' | 'HOUSEHOLD', token?: string) => void;
   onAdminPortal: () => void;
 }
 
@@ -40,25 +41,27 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   }, [loginMode]);
 
   // Handle traditional credential login
-  const handleCredentialSubmit = (e: React.FormEvent) => {
+  const handleCredentialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!taxCode.trim()) {
       setError('Vui lòng nhập Mã số thuế.');
       return;
     }
+    if (!password.trim()) {
+      setError('Vui lòng nhập Mật khẩu.');
+      return;
+    }
     setIsAuthenticating(true);
     setError(null);
 
-    setTimeout(() => {
+    try {
+      const session = await supabaseSignIn(taxCode, password);
       setIsAuthenticating(false);
-      if (loginMode === 'SME' && taxCode.trim() === '0109876543') {
-        onLoginSuccess('t-001', 'SME');
-      } else if (loginMode === 'HOUSEHOLD' && taxCode.trim() === '0311223344') {
-        onLoginSuccess('t-002', 'HOUSEHOLD');
-      } else {
-        setError('Mã số thuế hoặc Mật khẩu không đúng cho phân hệ đã chọn.');
-      }
-    }, 1000);
+      onLoginSuccess(session.tenantId, session.role, session.token);
+    } catch (err: any) {
+      setIsAuthenticating(false);
+      setError(err.message || 'Mã số thuế hoặc Mật khẩu không đúng cho phân hệ đã chọn.');
+    }
   };
 
   // Handle Digital Signature Login
@@ -80,9 +83,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       
       // Determine tenant from cert details
       if (ds.certInfo?.subject.includes('VIỄN ĐÔNG')) {
-        onLoginSuccess('t-001', 'SME');
+        onLoginSuccess('t-001', 'SME', 'u-sme-001');
       } else if (ds.certInfo?.subject.includes('LONG') || ds.certInfo?.subject.includes('SmartCA')) {
-        onLoginSuccess('t-002', 'HOUSEHOLD');
+        onLoginSuccess('t-002', 'HOUSEHOLD', 'u-hkd-002');
       } else {
         setError('Chứng thư số hợp lệ nhưng không khớp với doanh nghiệp nào đăng ký trên hệ thống.');
       }
