@@ -172,9 +172,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <ExternalLink size={11} color="var(--text-muted)" />
         </a>
 
-        {/* Link 2: SmartTax Cloud */}
+        {/* Link 2: Huy Technology AI Hub */}
         <a 
-          href="https://smarttax-ai.vercel.app" 
+          href="https://huycncdsai.io.vn" 
           target="_blank" 
           rel="noopener noreferrer"
           style={{
@@ -191,11 +191,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             fontWeight: 600,
             transition: 'all 0.2s'
           }}
-          title="Cổng kê khai & Kế toán thuế Cloud"
+          title="Huy Technology AI Hub - Chuyên gia Chuyển Đổi Số & Tự Động Hóa AI"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Sparkles size={13} color="var(--accent-lime)" />
-            <span>SmartTax Cloud</span>
+            <span>Huy Technology AI</span>
           </div>
           <ExternalLink size={11} color="var(--text-muted)" />
         </a>
