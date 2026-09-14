@@ -150,14 +150,20 @@ export const Overview: React.FC<OverviewProps> = ({
           <p className="metric-value">{formatCurrency(tenant.taxLiabilities.vat)}</p>
         </div>
 
-        <div className="metric-card highlight">
+        <div 
+          className="metric-card highlight" 
+          onClick={() => { setRiskFilter('ALL'); setActiveTab('radar'); }}
+          style={{ cursor: 'pointer' }}
+          title="Nhấn để xem chi tiết Radar rủi ro"
+        >
           <div className="flex-row-between" style={{ marginBottom: '12px' }}>
             <div className="metric-icon-box" style={{ backgroundColor: '#000000' }}>
               <AlertTriangle size={20} color="var(--accent-amber)" />
             </div>
+            <span style={{ fontSize: '10px', color: '#000000', fontWeight: 600, background: 'rgba(0,0,0,0.1)', padding: '2px 6px', borderRadius: '4px' }}>XEM NGAY</span>
           </div>
           <span className="metric-label" style={{ color: 'rgba(0,0,0,0.6)' }}>Radar rủi ro</span>
-          <p className="metric-value" style={{ color: '#000000' }}>3 Cảnh báo</p>
+          <p className="metric-value" style={{ color: '#000000' }}>{alerts.length} Cảnh báo</p>
         </div>
       </div>
 

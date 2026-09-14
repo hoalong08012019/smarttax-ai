@@ -189,7 +189,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           transform: rotate(90deg);
         }
         .chat-window.minimized {
-          height: 60px ! from JS inline;
+          height: 60px !important;
         }
       `}</style>
     </div>

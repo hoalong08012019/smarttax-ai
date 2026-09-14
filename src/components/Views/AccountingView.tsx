@@ -25,6 +25,7 @@ interface AccountingViewProps {
   accountingAuditIssues: AccountingAuditIssue[];
   handleRunAccountingAudit: () => void;
   handleFixAuditIssue: (issueId: string) => void;
+  setActiveTab?: (tab: string) => void;
 }
 
 export const AccountingView: React.FC<AccountingViewProps> = ({
@@ -35,7 +36,8 @@ export const AccountingView: React.FC<AccountingViewProps> = ({
   accountingAuditStatus,
   accountingAuditIssues,
   handleRunAccountingAudit,
-  handleFixAuditIssue
+  handleFixAuditIssue,
+  setActiveTab
 }) => {
   const [subView, setSubView] = useState<'ledger' | 'audit'>('ledger');
 
@@ -159,8 +161,12 @@ export const AccountingView: React.FC<AccountingViewProps> = ({
               </p>
               <button 
                 onClick={() => {
-                  const btn = document.querySelector('button[onClick*="sync"]');
-                  if (btn) (btn as HTMLButtonElement).click();
+                  if (setActiveTab) {
+                    setActiveTab('sync');
+                  } else {
+                    const btn = document.querySelector('button[onClick*="sync"]');
+                    if (btn) (btn as HTMLButtonElement).click();
+                  }
                 }}
                 className="btn-primary" 
                 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}

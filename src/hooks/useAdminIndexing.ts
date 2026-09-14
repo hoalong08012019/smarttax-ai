@@ -22,7 +22,9 @@ export const useAdminIndexing = () => {
       if (raw) {
         try {
           token = JSON.parse(raw).token || '';
-        } catch (e) {}
+        } catch {
+          token = '';
+        }
       }
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;

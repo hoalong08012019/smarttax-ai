@@ -28,6 +28,35 @@ export interface ReportSummary {
   verifiedLog: string;
 }
 
+interface RawParsedInvoice {
+  id?: string;
+  type?: 'INCOMING' | 'OUTGOING';
+  symbol?: string;
+  number?: string;
+  issue_date?: string;
+  issueDate?: string;
+  seller_tax_code?: string;
+  counterpartTaxCode?: string;
+  seller_name?: string;
+  counterpartName?: string;
+  pre_tax_amount?: number;
+  vat_rate?: string;
+  vat_amount?: number;
+  total_amount?: number;
+  ocr_confidence?: number;
+  status?: 'SAFE' | 'WARNING' | 'CRITICAL';
+  risk_flags?: string[];
+}
+
+interface RawParsedBankTx {
+  id?: string;
+  date?: string;
+  reference_number?: string;
+  description?: string;
+  amount?: number;
+  type?: 'DEBIT' | 'CREDIT';
+}
+
 export const useSmartTax = () => {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     if (typeof window !== 'undefined') {
@@ -54,7 +83,7 @@ export const useSmartTax = () => {
           return true;
         }
         sessionStorage.removeItem('smarttax_user_auth');
-      } catch (e) {
+      } catch {
         return false;
       }
     }
@@ -70,7 +99,7 @@ export const useSmartTax = () => {
         if (data.authenticated && data.expiresAt > Date.now()) {
           return data.userType;
         }
-      } catch (e) {
+      } catch {
         return null;
       }
     }
@@ -86,7 +115,9 @@ export const useSmartTax = () => {
           if (data.authenticated && data.expiresAt > Date.now()) {
             return data.tenantId;
           }
-        } catch (e) {}
+        } catch {
+          // ignore
+        }
       }
     }
     return 't-001';
@@ -95,76 +126,21 @@ export const useSmartTax = () => {
   const [activeTab, setActiveTab] = useState<string>('overview');
 
   const getAuthToken = useCallback((): string => {
-    if (typeof window === 'undefined') return '';
-    const raw = sessionStorage.getItem('smarttax_user_auth');
-    if (!raw) return '';
-    try {
-      const data = JSON.parse(raw);
-      return data.token || '';
-    } catch (e) {
-      return '';
+    if (typeof window !== 'undefined') {
+      const raw = sessionStorage.getItem('smarttax_user_auth');
+      if (!raw) return '';
+      try {
+        const data = JSON.parse(raw);
+        return data.token || '';
+      } catch {
+        return '';
+      }
     }
+    return '';
   }, []);
   
   const tenant = useMemo(() => {
     return MOCK_TENANTS.find(t => t.id === activeTenantId) || MOCK_TENANTS[0];
-  }, [activeTenantId]);
-
-  // Accounting Upload & AI Auditing states
-  const [accountingFileName, setAccountingFileName] = useState<string | null>(null);
-  const [accountingAuditStatus, setAccountingAuditStatus] = useState<'IDLE' | 'AUDITING' | 'COMPLETED'>('IDLE');
-  const [accountingAuditIssues, setAccountingAuditIssues] = useState<AccountingAuditIssue[]>([]);
-  const [trialBalanceData, setTrialBalanceData] = useState<TrialBalanceItem[]>([]);
-
-  // Step-by-step Filing Wizard states
-  const [filingStep, setFilingStep] = useState<number>(1);
-  const [filingStatus, setFilingStatus] = useState<'DRAFT' | 'SIGNED' | 'SUBMITTED' | 'ACCEPTED'>('DRAFT');
-  const [gdtReceipt, setGdtReceipt] = useState<GdtReceipt | null>(null);
-
-  // AI Chief Accountant Internal Control states
-  const [payrollEmployees, setPayrollEmployees] = useState<PayrollEmployee[]>(MOCK_PAYROLL_EMPLOYEES);
-  const [internalControlStatus, setInternalControlStatus] = useState<'IDLE' | 'SCANNING' | 'COMPLETED'>('IDLE');
-  const [internalControlIssues, setInternalControlIssues] = useState<InternalControlIssue[]>([]);
-
-  // Bank reconciliation states
-  const [bankFileName, setBankFileName] = useState<string | null>(null);
-  const [bankTransactions, setBankTransactions] = useState<BankTransaction[]>([]);
-  const [bankReconStatus, setBankReconStatus] = useState<'IDLE' | 'MATCHING' | 'COMPLETED'>('IDLE');
-
-  // Autopilot states
-  const [autopilotEnabled, setAutopilotEnabled] = useState<boolean>(false);
-  const [autopilotStatus, setAutopilotStatus] = useState<'IDLE' | 'RUNNING' | 'COMPLETED'>('IDLE');
-  const [autopilotLogs, setAutopilotLogs] = useState<string[]>([]);
-  const [showZaloNotification, setShowZaloNotification] = useState<boolean>(false);
-
-  // Reset certain states when tenant changes for data isolation
-  useEffect(() => {
-    setSyncLog([
-      'Hệ thống khởi tạo kết nối tự động...',
-      'Đã tải chứng thư số SSL/TLS với Tổng cục Thuế thành công.'
-    ]);
-    setOcrParsingStatus('IDLE');
-    setUploadedFileName(null);
-    setNewOcrResult(null);
-    
-    setAccountingFileName(null);
-    setAccountingAuditStatus('IDLE');
-    setAccountingAuditIssues([]);
-    setTrialBalanceData([]);
-    setFilingStep(1);
-    setFilingStatus('DRAFT');
-    setGdtReceipt(null);
-
-    setPayrollEmployees(MOCK_PAYROLL_EMPLOYEES);
-    setInternalControlStatus('IDLE');
-    setInternalControlIssues([]);
-
-    setBankFileName(null);
-    setBankTransactions([]);
-    setBankReconStatus('IDLE');
-    setAutopilotStatus('IDLE');
-    setAutopilotLogs([]);
-    setShowZaloNotification(false);
   }, [activeTenantId]);
 
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -195,12 +171,73 @@ export const useSmartTax = () => {
     verifiedLog: 'Đã nội suy tự động từ Sổ Cái Kế toán. Khớp 100% hóa đơn GDT xác thực.'
   });
 
+  // Accounting Upload & AI Auditing states
+  const [accountingFileName, setAccountingFileName] = useState<string | null>(null);
+  const [accountingAuditStatus, setAccountingAuditStatus] = useState<'IDLE' | 'AUDITING' | 'COMPLETED'>('IDLE');
+  const [accountingAuditIssues, setAccountingAuditIssues] = useState<AccountingAuditIssue[]>([]);
+  const [trialBalanceData, setTrialBalanceData] = useState<TrialBalanceItem[]>([]);
+
+  // Step-by-step Filing Wizard states
+  const [filingStep, setFilingStep] = useState<number>(1);
+  const [filingStatus, setFilingStatus] = useState<'DRAFT' | 'SIGNED' | 'SUBMITTED' | 'ACCEPTED'>('DRAFT');
+  const [gdtReceipt, setGdtReceipt] = useState<GdtReceipt | null>(null);
+
+  // AI Chief Accountant Internal Control states
+  const [payrollEmployees, setPayrollEmployees] = useState<PayrollEmployee[]>(MOCK_PAYROLL_EMPLOYEES);
+  const [internalControlStatus, setInternalControlStatus] = useState<'IDLE' | 'SCANNING' | 'COMPLETED'>('IDLE');
+  const [internalControlIssues, setInternalControlIssues] = useState<InternalControlIssue[]>([]);
+
+  // Bank reconciliation states
+  const [bankFileName, setBankFileName] = useState<string | null>(null);
+  const [bankTransactions, setBankTransactions] = useState<BankTransaction[]>([]);
+  const [bankReconStatus, setBankReconStatus] = useState<'IDLE' | 'MATCHING' | 'COMPLETED'>('IDLE');
+
+  // Autopilot states
+  const [autopilotEnabled, setAutopilotEnabled] = useState<boolean>(false);
+  const [autopilotStatus, setAutopilotStatus] = useState<'IDLE' | 'RUNNING' | 'COMPLETED'>('IDLE');
+  const [autopilotLogs, setAutopilotLogs] = useState<string[]>([]);
+  const [showZaloNotification, setShowZaloNotification] = useState<boolean>(false);
+
+  const resetTenantState = useCallback(() => {
+    setSyncLog([
+      'Hệ thống khởi tạo kết nối tự động...',
+      'Đã tải chứng thư số SSL/TLS với Tổng cục Thuế thành công.'
+    ]);
+    setOcrParsingStatus('IDLE');
+    setUploadedFileName(null);
+    setNewOcrResult(null);
+    
+    setAccountingFileName(null);
+    setAccountingAuditStatus('IDLE');
+    setAccountingAuditIssues([]);
+    setTrialBalanceData([]);
+    setFilingStep(1);
+    setFilingStatus('DRAFT');
+    setGdtReceipt(null);
+
+    setPayrollEmployees(MOCK_PAYROLL_EMPLOYEES);
+    setInternalControlStatus('IDLE');
+    setInternalControlIssues([]);
+
+    setBankFileName(null);
+    setBankTransactions([]);
+    setBankReconStatus('IDLE');
+    setAutopilotStatus('IDLE');
+    setAutopilotLogs([]);
+    setShowZaloNotification(false);
+  }, []);
+
+  const switchTenant = useCallback((newTenantId: string) => {
+    setActiveTenantId(newTenantId);
+    resetTenantState();
+  }, [resetTenantState]);
+
   const appendToSyncLog = useCallback((message: string) => {
     setSyncLog(prev => {
       const newLog = [...prev, `[${new Date().toLocaleTimeString()}] ${message}`];
       return newLog.slice(-50); // Keep only last 50 entries to prevent memory issues
     });
-  }, []);
+  }, [setSyncLog]);
 
   const handleCalculateDynamicReport = useCallback((pType = reportPeriodType, pVal = reportPeriodValue) => {
     setIsGeneratingReport(true);
@@ -224,10 +261,10 @@ export const useSmartTax = () => {
       const curVatDeduct = Math.round(vatDeductibleSum * multiplier) || 12500000;
       const curVatOut = Math.round(vatOutputSum * multiplier) || 15000000;
       
-      let netVat = 0;
+      let netVat: number;
       let netPit = 0;
       let netCit = 0;
-      let legalNote = '';
+      let legalNote: string;
 
       if (tenant.accountingRegime === 'TT133') {
         // SME Deduction Method (TT 80/2021/TT-BTC)
@@ -383,10 +420,10 @@ export const useSmartTax = () => {
       expiresAt: Date.now() + 60 * 60 * 1000 // 1 hour
     };
     sessionStorage.setItem('smarttax_user_auth', JSON.stringify(sessionData));
-    setActiveTenantId(tenantId);
+    switchTenant(tenantId);
     setUserType(role);
     setIsAuthenticated(true);
-  }, []);
+  }, [switchTenant]);
 
   const logoutUser = useCallback(() => {
     const raw = sessionStorage.getItem('smarttax_user_auth');
@@ -396,14 +433,16 @@ export const useSmartTax = () => {
         if (data.token) {
           supabaseSignOut(data.token);
         }
-      } catch (e) {}
+      } catch {
+        // ignore
+      }
     }
     sessionStorage.removeItem('smarttax_user_auth');
     setIsAuthenticated(false);
     setUserType(null);
-    setActiveTenantId('t-001');
+    switchTenant('t-001');
     setActiveTab('overview');
-  }, []);
+  }, [switchTenant]);
 
   const handleRunInternalControlScan = useCallback(() => {
     setInternalControlStatus('SCANNING');
@@ -632,7 +671,7 @@ export const useSmartTax = () => {
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
       if (data.success && data.invoices && data.invoices.length > 0) {
-        const newInvs = data.invoices.map((inv: any, index: number) => ({
+        const newInvs: Invoice[] = data.invoices.map((inv: RawParsedInvoice, index: number) => ({
           id: `inv-real-${Date.now()}-${index}`,
           type: inv.type || 'INCOMING',
           symbol: inv.symbol || '1C26TCC',
@@ -656,7 +695,7 @@ export const useSmartTax = () => {
           [activeTenantId]: [...newInvs, ...(prev[activeTenantId] || [])]
         }));
         
-        const newJournals = newInvs.map((inv: any, index: number) => ({
+        const newJournals = newInvs.map((inv: Invoice, index: number) => ({
           id: `je-real-${Date.now()}-${index}`,
           date: inv.issueDate,
           voucherCode: `GDT-${inv.number}`,
@@ -754,7 +793,7 @@ export const useSmartTax = () => {
       if (!res.ok) throw new Error('API error');
       const data = await res.json();
       if (data.success && data.transactions) {
-        const txs = data.transactions.map((tx: any, idx: number) => ({
+        const txs = data.transactions.map((tx: RawParsedBankTx, idx: number) => ({
           id: `tx-real-${Date.now()}-${idx}`,
           date: tx.date || new Date().toLocaleDateString('vi-VN'),
           referenceNumber: tx.reference_number || `UNC-${Math.floor(1000 + Math.random()*9000)}`,
@@ -846,10 +885,10 @@ export const useSmartTax = () => {
       }
     }, 450);
 
-  }, [activeTenantId, handleApplyPayrollOptimization, handleInjectCashLoan, tenant]);
+  }, [activeTenantId, getAuthToken, handleApplyPayrollOptimization, handleInjectCashLoan, tenant]);
 
   return {
-    activeTenantId, setActiveTenantId,
+    activeTenantId, setActiveTenantId: switchTenant,
     activeTab, setActiveTab,
     tenant,
     isSyncing, setIsSyncing,

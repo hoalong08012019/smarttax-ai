@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Lock, 
   Unlock, 
@@ -30,15 +30,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-  // Sync default tax code when mode switches
-  useEffect(() => {
-    if (loginMode === 'SME') {
+  // Switch mode handler
+  const handleSelectMode = (mode: 'SME' | 'HOUSEHOLD' | 'DIGITAL_SIGN') => {
+    setLoginMode(mode);
+    if (mode === 'SME') {
       setTaxCode('0109876543');
-    } else if (loginMode === 'HOUSEHOLD') {
+    } else if (mode === 'HOUSEHOLD') {
       setTaxCode('0311223344');
     }
     setError(null);
-  }, [loginMode]);
+  };
 
   // Handle traditional credential login
   const handleCredentialSubmit = async (e: React.FormEvent) => {
@@ -58,9 +59,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       const session = await supabaseSignIn(taxCode, password);
       setIsAuthenticating(false);
       onLoginSuccess(session.tenantId, session.role, session.token);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setIsAuthenticating(false);
-      setError(err.message || 'Mã số thuế hoặc Mật khẩu không đúng cho phân hệ đã chọn.');
+      const msg = err instanceof Error ? err.message : 'Mã số thuế hoặc Mật khẩu không đúng cho phân hệ đã chọn.';
+      setError(msg);
     }
   };
 
@@ -69,8 +71,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     try {
       setError(null);
       await ds.requestToken(method);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Không thể kết nối thiết bị ký số.');
     }
   };
 
@@ -89,8 +91,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       } else {
         setError('Chứng thư số hợp lệ nhưng không khớp với doanh nghiệp nào đăng ký trên hệ thống.');
       }
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Lỗi xác thực mã PIN ký số.');
     }
   };
 
@@ -192,7 +194,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         {/* MODE SWITCHER TABS */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
           <button 
-            onClick={() => setLoginMode('SME')}
+            type="button"
+            onClick={() => handleSelectMode('SME')}
             style={{ 
               padding: '8px 4px', 
               borderRadius: '6px', 
@@ -209,7 +212,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             Doanh nghiệp (SME)
           </button>
           <button 
-            onClick={() => setLoginMode('HOUSEHOLD')}
+            type="button"
+            onClick={() => handleSelectMode('HOUSEHOLD')}
             style={{ 
               padding: '8px 4px', 
               borderRadius: '6px', 
@@ -226,7 +230,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             Hộ kinh doanh
           </button>
           <button 
-            onClick={() => setLoginMode('DIGITAL_SIGN')}
+            type="button"
+            onClick={() => handleSelectMode('DIGITAL_SIGN')}
             style={{ 
               padding: '8px 4px', 
               borderRadius: '6px', 

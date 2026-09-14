@@ -200,7 +200,7 @@ export default function App() {
     }, 1500);
   };
 
-  const [chatHistory, setChatHistory] = React.useState<any[]>([
+  const [chatHistory, setChatHistory] = React.useState<Array<{ sender: 'USER' | 'AI'; text: string; citation?: string }>>([
     { sender: 'AI', text: MOCK_QA_KNOWLEDGE[0].shortAnswer + '\n\n' + MOCK_QA_KNOWLEDGE[0].fullAnalysis, citation: MOCK_QA_KNOWLEDGE[0].legalCitation }
   ]);
   const [customQuestionInput, setCustomQuestionInput] = React.useState('');
@@ -235,10 +235,10 @@ export default function App() {
         const qLower = userQ.toLowerCase();
         
         // Advanced Keyword Search & Scoring
-        let bestMatch = null;
+        let bestMatch: typeof MOCK_QA_KNOWLEDGE[0] | null = null;
         let highestScore = 0;
 
-        MOCK_QA_KNOWLEDGE.forEach(item => {
+        for (const item of MOCK_QA_KNOWLEDGE) {
           let score = 0;
           const keywords = item.tags.map(t => t.toLowerCase());
           
@@ -254,14 +254,14 @@ export default function App() {
             highestScore = score;
             bestMatch = item;
           }
-        });
+        }
 
         let responseText = '';
         let citation = '';
 
         if (bestMatch && highestScore > 3) {
-          responseText = `🔍 **Phân tích RAG (Dữ liệu xác thực)**:\n\n${(bestMatch as any).shortAnswer}\n\n${(bestMatch as any).fullAnalysis}\n\n💡 **Lời khuyên từ SmartTax AI**: Dựa trên hồ sơ của bạn, chúng tôi khuyến nghị rà soát ngay các chứng từ liên quan để đảm bảo tính nhất quán.`;
-          citation = (bestMatch as any).legalCitation;
+          responseText = `🔍 **Phân tích RAG (Dữ liệu xác thực)**:\n\n${bestMatch.shortAnswer}\n\n${bestMatch.fullAnalysis}\n\n💡 **Lời khuyên từ SmartTax AI**: Dựa trên hồ sơ của bạn, chúng tôi khuyến nghị rà soát ngay các chứng từ liên quan để đảm bảo tính nhất quán.`;
+          citation = bestMatch.legalCitation;
         } else {
           // Smart Fallback based on context
           if (qLower.includes('thuế') || qLower.includes('gtgt')) {
@@ -438,6 +438,7 @@ export default function App() {
               accountingAuditIssues={accountingAuditIssues}
               handleRunAccountingAudit={handleRunAccountingAudit}
               handleFixAuditIssue={handleFixAuditIssue}
+              setActiveTab={setActiveTab}
             />
           )}
 

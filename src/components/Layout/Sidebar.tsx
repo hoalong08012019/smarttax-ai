@@ -5,7 +5,11 @@ import {
   FileSpreadsheet, 
   AlertTriangle, 
   FileText, 
-  MessageSquare 
+  MessageSquare,
+  Globe,
+  GraduationCap,
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -124,6 +128,78 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       </button>
+
+      <div style={{
+        marginTop: '16px',
+        padding: '12px',
+        borderRadius: '10px',
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        border: '1px solid rgba(255, 255, 255, 0.08)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+          <Globe size={13} color="var(--accent-cyan)" />
+          <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-cyan)', letterSpacing: '0.5px' }}>
+            HỆ SINH THÁI ĐỐI TÁC
+          </span>
+        </div>
+        
+        {/* Link 1: EduViet AI */}
+        <a 
+          href="https://gvcncdsai.io.vn" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 10px',
+            marginBottom: '6px',
+            borderRadius: '6px',
+            backgroundColor: 'rgba(0, 224, 255, 0.05)',
+            border: '1px solid rgba(0, 224, 255, 0.15)',
+            color: '#ffffff',
+            textDecoration: 'none',
+            fontSize: '11px',
+            fontWeight: 600,
+            transition: 'all 0.2s'
+          }}
+          title="Nền tảng Giáo dục AI & Quản lý Giáo viên EduViet"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <GraduationCap size={13} color="var(--accent-cyan)" />
+            <span>EduViet AI</span>
+          </div>
+          <ExternalLink size={11} color="var(--text-muted)" />
+        </a>
+
+        {/* Link 2: SmartTax Cloud */}
+        <a 
+          href="https://smarttax-ai.vercel.app" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 10px',
+            borderRadius: '6px',
+            backgroundColor: 'rgba(204, 255, 0, 0.05)',
+            border: '1px solid rgba(204, 255, 0, 0.15)',
+            color: '#ffffff',
+            textDecoration: 'none',
+            fontSize: '11px',
+            fontWeight: 600,
+            transition: 'all 0.2s'
+          }}
+          title="Cổng kê khai & Kế toán thuế Cloud"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Sparkles size={13} color="var(--accent-lime)" />
+            <span>SmartTax Cloud</span>
+          </div>
+          <ExternalLink size={11} color="var(--text-muted)" />
+        </a>
+      </div>
     </aside>
   );
 };

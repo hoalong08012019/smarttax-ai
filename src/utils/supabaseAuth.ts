@@ -118,7 +118,7 @@ export const supabaseSignIn = async (
       role: role,
       email: authData.user.email || email,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Supabase Auth Error, falling back to mock: ", error);
     // Hỗ trợ dự phòng chạy demo nếu lỗi kết nối mạng tới Supabase
     if (taxCode === "0109876543" && password === "123456") {
@@ -136,7 +136,8 @@ export const supabaseSignIn = async (
         email: email,
       };
     }
-    throw new Error(error.message || "Không thể kết nối đến máy chủ xác thực.");
+    const errorMessage = error instanceof Error ? error.message : "Không thể kết nối đến máy chủ xác thực.";
+    throw new Error(errorMessage, { cause: error });
   }
 };
 
@@ -226,8 +227,9 @@ export const supabaseSignUp = async (
       success: true,
       message: "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản nếu có yêu cầu.",
     };
-  } catch (error: any) {
-    throw new Error(error.message || "Lỗi đăng ký tài khoản.");
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Lỗi đăng ký tài khoản.";
+    throw new Error(errorMessage, { cause: error });
   }
 };
 

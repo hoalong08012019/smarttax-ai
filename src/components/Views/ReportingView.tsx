@@ -19,7 +19,8 @@ import {
   FileDown,
   Database
 } from 'lucide-react';
-import type { Tenant, GdtReceipt } from '../../mockData';
+import type { Tenant, GdtReceipt, AccountingAuditIssue } from '../../mockData';
+import type { ReportSummary } from '../../hooks/useSmartTax';
 import { formatCurrency } from '../../utils/formatters';
 import { useDigitalSignature } from '../../hooks/useDigitalSignature';
 
@@ -33,12 +34,12 @@ interface ReportingViewProps {
   setReportPeriodValue: (val: string) => void;
   isGeneratingReport: boolean;
   handleCalculateDynamicReport: () => void;
-  generatedReportSummary: any;
+  generatedReportSummary: ReportSummary | null;
   handleDownloadXml: () => void;
   
   // New props for step filing
   accountingFileName: string | null;
-  accountingAuditIssues: any[];
+  accountingAuditIssues: AccountingAuditIssue[];
   filingStep: number;
   setFilingStep: (step: number) => void;
   filingStatus: 'DRAFT' | 'SIGNED' | 'SUBMITTED' | 'ACCEPTED';
@@ -96,8 +97,8 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
       await ds.verifyPinAndSign(xmlDraft);
       setFilingStatus('SIGNED');
       setFilingStep(4); // Move directly to Submission tab
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Lỗi ký số tờ khai.');
     }
   };
 
@@ -390,7 +391,7 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <select 
                     value={reportPeriodType}
-                    onChange={(e) => setReportPeriodType(e.target.value as any)}
+                    onChange={(e) => setReportPeriodType(e.target.value as 'MONTH' | 'QUARTER' | 'YEAR')}
                     className="input-premium"
                     style={{ padding: '10px' }}
                   >
@@ -709,7 +710,7 @@ export const ReportingView: React.FC<ReportingViewProps> = ({
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px', marginBottom: '8px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Số tiền thuế nộp:</span>
-                  <strong style={{ color: 'var(--accent-lime)' }}>{formatCurrency(generatedReportSummary?.payableVat + (generatedReportSummary?.payableCitOrPit || 0))}</strong>
+                  <strong style={{ color: 'var(--accent-lime)' }}>{formatCurrency((generatedReportSummary?.payableVat || 0) + (generatedReportSummary?.payableCitOrPit || 0))}</strong>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '10px' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Định dạng file:</span>

@@ -12,7 +12,7 @@ export const useAdminAuth = () => {
         }
         // Session expired or invalid
         sessionStorage.removeItem('smarttax_admin_auth');
-      } catch (e) {
+      } catch {
         return false;
       }
     }

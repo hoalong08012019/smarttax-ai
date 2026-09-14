@@ -125,7 +125,7 @@ export const useDigitalSignature = () => {
   </ds:KeyInfo>
 </ds:Signature>
 ${xmlContent}`;
-  }, [pinInput, pinAttempts, status.deviceName, status.isBlocked, status.method, status.certInfo]);
+  }, [pinInput, pinAttempts, status.isBlocked, status.method, status.certInfo]);
 
   const openPinDialog = useCallback(() => {
     if (!status.isConnected) return;
