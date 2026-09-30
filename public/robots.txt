@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /backend/
+Disallow: /api/
+
+Sitemap: https://smarttax-ai.vercel.app/sitemap.xml
