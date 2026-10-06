@@ -1,3 +1,4 @@
+import { apiUrl } from '../../utils/api';
 import React from 'react';
 import { 
   Lock, 
@@ -59,25 +60,30 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
 
           <form onSubmit={(e) => {
             e.preventDefault();
-            const targetPasscode = import.meta.env.VITE_ADMIN_PASSCODE || 'smarttax2026';
-            if (adminPasscodeInput === targetPasscode) {
-              const sessionData = {
-                authenticated: true,
-                expiresAt: Date.now() + 30 * 60 * 1000 // 30 minutes
-              };
-              sessionStorage.setItem('smarttax_admin_auth', JSON.stringify(sessionData));
-              setIsAdminAuthenticated(true);
-              setAdminAuthError(null);
-            } else {
-              setAdminAuthError('Mã truy cập không chính xác. Vui lòng thử lại.');
-            }
+            void (async () => {
+              try {
+                const raw = sessionStorage.getItem('smarttax_user_auth');
+                const token = raw ? JSON.parse(raw).token : '';
+                if (!token) throw new Error('Vui lòng đăng nhập tài khoản quản trị trước.');
+                const response = await fetch(apiUrl('/api/admin/session'), {
+                  headers: { Authorization: 'Bearer ' + token }
+                });
+                if (!response.ok) throw new Error('Không có quyền quản trị đã xác thực.');
+                setIsAdminAuthenticated(true);
+                setAdminAuthError(null);
+              } catch (error) {
+                setIsAdminAuthenticated(false);
+                setAdminAuthError(error instanceof Error ? error.message : 'Xác thực không khả dụng.');
+              }
+            })();
           }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '6px', fontWeight: 700 }} className="font-mono">
-                NHẬP MÃ BẢO MẬT (ROOT PASSCODE):
+                KIỂM TRA QUYỀN TÀI KHOẢN ĐÃ ĐĂNG NHẬP:
               </label>
               <input 
                 type="password"
+                aria-label="Kiểm tra quyền quản trị"
                 value={adminPasscodeInput}
                 onChange={(e) => setAdminPasscodeInput(e.target.value)}
                 placeholder="••••••••••••"
@@ -85,7 +91,7 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                 autoFocus
               />
               <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', marginTop: '6px', textAlign: 'center' }}>
-                Gợi ý mật khẩu demo: <strong style={{ color: '#ffffff' }}>smarttax2026</strong>
+                Quyền quản trị được xác thực tại máy chủ.
               </span>
             </div>
 

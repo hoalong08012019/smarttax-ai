@@ -40,32 +40,8 @@ export const supabaseSignIn = async (
   password: string
 ): Promise<AuthSession> => {
   const email = resolveEmail(taxCodeOrEmail);
-  const taxCode = email.split("@")[0];
-
-  // 1. Chế độ Mock Fallback khi offline hoặc chưa cấu hình
   if (!isSupabaseConfigured()) {
-    console.warn("Supabase Auth: Chạy chế độ Mock offline.");
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (taxCode === "0109876543" && password === "123456") {
-          resolve({
-            token: "u-sme-001",
-            tenantId: "t-001",
-            role: "SME",
-            email: email,
-          });
-        } else if (taxCode === "0311223344" && password === "123456") {
-          resolve({
-            token: "u-hkd-002",
-            tenantId: "t-002",
-            role: "HOUSEHOLD",
-            email: email,
-          });
-        } else {
-          reject(new Error("Mã số thuế hoặc Mật khẩu giả định không chính xác (Mẫu: 0109876543/0311223344 mật khẩu 123456)."));
-        }
-      }, 800);
-    });
+    throw new Error('Dịch vụ xác thực chưa được cấu hình.');
   }
 
   // 2. Gọi Supabase Auth REST API thật
@@ -119,23 +95,6 @@ export const supabaseSignIn = async (
       email: authData.user.email || email,
     };
   } catch (error: unknown) {
-    console.error("Supabase Auth Error, falling back to mock: ", error);
-    // Hỗ trợ dự phòng chạy demo nếu lỗi kết nối mạng tới Supabase
-    if (taxCode === "0109876543" && password === "123456") {
-      return {
-        token: "u-sme-001",
-        tenantId: "t-001",
-        role: "SME",
-        email: email,
-      };
-    } else if (taxCode === "0311223344" && password === "123456") {
-      return {
-        token: "u-hkd-002",
-        tenantId: "t-002",
-        role: "HOUSEHOLD",
-        email: email,
-      };
-    }
     const errorMessage = error instanceof Error ? error.message : "Không thể kết nối đến máy chủ xác thực.";
     throw new Error(errorMessage, { cause: error });
   }
@@ -153,10 +112,7 @@ export const supabaseSignUp = async (
   const email = resolveEmail(taxCodeOrEmail);
 
   if (!isSupabaseConfigured()) {
-    return {
-      success: true,
-      message: "Đăng ký thành công (Chế độ Mock Offline).",
-    };
+    throw new Error('Dịch vụ xác thực chưa được cấu hình.');
   }
 
   try {
@@ -166,7 +122,7 @@ export const supabaseSignUp = async (
         "Content-Type": "application/json",
         apikey: SUPABASE_KEY,
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, data: { company_name: companyName, requested_role: role } }),
     });
 
     if (!response.ok) {
@@ -174,58 +130,10 @@ export const supabaseSignUp = async (
       throw new Error(errorData.msg || errorData.message || "Đăng ký tài khoản mới thất bại.");
     }
 
-    const signUpData = await response.json();
-    const userId = signUpData.id || (signUpData.user && signUpData.user.id);
-
-    if (userId) {
-      // Tự động tạo Tenant & User profile liên kết bằng Service-Role hoặc thông qua Client API nếu cấu hình cho phép.
-      // Do Supabase RLS giới hạn tạo thẳng từ client vô danh, việc liên kết tenant thường được thực hiện qua Database Trigger
-      // khi có bản ghi auth.users mới. Tuy nhiên, chúng ta gửi thêm bản ghi qua REST API nếu không có RLS chặn tạo.
-      try {
-        // Tạo tenant
-        const tenantRes = await fetch(`${SUPABASE_URL}/rest/v1/tenants`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: SUPABASE_KEY,
-            Prefer: "return=representation",
-          },
-          body: JSON.stringify({
-            tax_code: email.split("@")[0],
-            company_name: companyName,
-            accounting_regime: role === "SME" ? "TT133" : "TT88",
-          }),
-        });
-
-        if (tenantRes.ok) {
-          const tenants = await tenantRes.json();
-          const tenantId = tenants[0]?.id;
-          
-          if (tenantId) {
-            // Tạo user profile tương ứng
-            await fetch(`${SUPABASE_URL}/rest/v1/users`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                apikey: SUPABASE_KEY,
-              },
-              body: JSON.stringify({
-                id: userId,
-                email: email,
-                role: role === "HOUSEHOLD" ? "HOUSEHOLD" : "OWNER",
-                tenant_id: tenantId,
-              }),
-            });
-          }
-        }
-      } catch (err) {
-        console.warn("Không thể tự động tạo Tenant profile. Kỳ vọng Trigger DB sẽ xử lý.", err);
-      }
-    }
 
     return {
       success: true,
-      message: "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản nếu có yêu cầu.",
+      message: "Yêu cầu đăng ký đã được tiếp nhận. Xác nhận email và cấp quyền doanh nghiệp cần được hoàn tất trước khi đăng nhập.",
     };
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Lỗi đăng ký tài khoản.";

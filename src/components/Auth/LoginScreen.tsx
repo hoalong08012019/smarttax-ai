@@ -80,17 +80,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
   const handlePinSubmit = async () => {
     try {
       setError(null);
-      // Verify Pin & simulated sign request to verify identity
-      await ds.verifyPinAndSign('<AUTH_CHALLENGE>');
-      
-      // Determine tenant from cert details
-      if (ds.certInfo?.subject.includes('VIỄN ĐÔNG')) {
-        onLoginSuccess('t-001', 'SME', 'u-sme-001');
-      } else if (ds.certInfo?.subject.includes('LONG') || ds.certInfo?.subject.includes('SmartCA')) {
-        onLoginSuccess('t-002', 'HOUSEHOLD', 'u-hkd-002');
-      } else {
-        setError('Chứng thư số hợp lệ nhưng không khớp với doanh nghiệp nào đăng ký trên hệ thống.');
-      }
+      setError('Đăng nhập bằng chứng thư số chưa có dịch vụ xác thực. Vui lòng dùng tài khoản đã đăng ký.');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Lỗi xác thực mã PIN ký số.');
     }
@@ -267,6 +257,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <Building2 size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
                 <input 
                   type="text"
+                  aria-label="Mã số thuế hoặc email"
                   value={taxCode}
                   onChange={(e) => setTaxCode(e.target.value)}
                   placeholder="Nhập 10 chữ số mã số thuế"
@@ -286,6 +277,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 <Lock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
                 <input 
                   type="password"
+                  aria-label="Mật khẩu"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"

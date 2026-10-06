@@ -11,7 +11,11 @@ def parse_vietnam_invoice_xml(xml_content: bytes) -> Dict[str, Any]:
     """
     try:
         # Giải mã chuỗi XML bảo mật
-        xml_str = xml_content.decode('utf-8-sig', errors='ignore')
+        if len(xml_content) > 5 * 1024 * 1024:
+            raise ValueError('XML exceeds size limit')
+        xml_str = xml_content.decode('utf-8-sig')
+        if '<!DOCTYPE' in xml_str.upper() or '<!ENTITY' in xml_str.upper():
+            raise ValueError('DTD and entities are unsupported')
         root = ET.fromstring(xml_str)
         
         # Loại bỏ namespaces để dễ tìm kiếm tag bằng XPath đơn giản
@@ -46,7 +50,8 @@ def parse_vietnam_invoice_xml(xml_content: bytes) -> Dict[str, Any]:
             result["symbol"] = f"{kh_mau}{kh_hdon}" if kh_mau else kh_hdon
             
             # Số hóa đơn
-            result["number"] = tt_chung.findtext("SHDon", "").zfill(8)
+            raw_number = tt_chung.findtext("SHDon", "").strip()
+            result["number"] = raw_number.zfill(8) if raw_number else ""
             
             # Ngày lập hóa đơn
             result["issue_date"] = tt_chung.findtext("NLap", "")
@@ -119,6 +124,8 @@ def parse_vietnam_invoice_xml(xml_content: bytes) -> Dict[str, Any]:
                 except ValueError:
                     pass
 
+        if not result["number"] or not result["seller_tax_code"]:
+            raise ValueError("Missing invoice identity")
         return result
     except Exception as e:
         raise ValueError(f"Không thể phân tích cú pháp tệp XML: {str(e)}")
@@ -130,8 +137,15 @@ def parse_invoices_zip(zip_content: bytes) -> List[Dict[str, Any]]:
     """
     invoices = []
     try:
+        if len(zip_content) > 10 * 1024 * 1024:
+            raise ValueError("Archive exceeds size limit")
         with zipfile.ZipFile(BytesIO(zip_content)) as archive:
-            for file_info in archive.infolist():
+            infos = archive.infolist()
+            if len(infos) > 100 or sum(i.file_size for i in infos) > 20 * 1024 * 1024:
+                raise ValueError("Archive expansion exceeds limit")
+            if any(i.file_size > 5 * 1024 * 1024 or i.flag_bits & 1 or (i.file_size > 0 and i.file_size / max(i.compress_size,1) > 200) for i in infos):
+                raise ValueError("Unsafe archive entry")
+            for file_info in infos:
                 if file_info.filename.endswith('.xml') and not file_info.filename.startswith('__MACOSX'):
                     with archive.open(file_info) as file:
                         xml_bytes = file.read()

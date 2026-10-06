@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import path from 'node:path';
+import ts from 'typescript';
+const root=process.cwd();
+function load(file,{env={},fetchImpl=async()=>{throw new Error('offline')},states=[]}={}) {
+ const module={exports:{}};
+ const ctx={module,exports:module.exports,console:{warn(){},error(){}},setTimeout,clearTimeout,Date,Math,JSON,Error,FormData,window:{alert(){},localStorage:{getItem(){return null}},sessionStorage:{getItem(){return null}}},localStorage:{getItem(){return null}},sessionStorage:{getItem(){return null},setItem(){}},fetch:fetchImpl,__env:env};
+ ctx.require=(name)=>{
+  if(name==='react')return {useState(initial){const v=typeof initial==='function'?initial():initial;return [v,x=>states.push(x)]},useMemo(f){return f()},useCallback(f){return f},useEffect(){}};
+  if(name.endsWith('supabaseAuth'))return {supabaseSignOut(){}};
+  if(name.endsWith('/api'))return {apiUrl(p){return p}};
+  if(name.endsWith('mockData'))return load('src/mockData.ts');
+  throw new Error('Unexpected import '+name);
+ };
+ const source=fs.readFileSync(path.join(root,file),'utf8').replaceAll('import.meta.env','__env');
+ vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,ctx);
+ return module.exports;
+}
+const auth=load('src/utils/supabaseAuth.ts');
+await assert.rejects(auth.supabaseSignIn('0109876543','123456'),/chưa được cấu hình/);
+const failed=load('src/utils/supabaseAuth.ts',{env:{VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_ANON_KEY:'test-key'}});
+await assert.rejects(failed.supabaseSignIn('0109876543','123456'),/offline/);
+const denied=load('src/utils/supabaseAuth.ts',{env:{VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_ANON_KEY:'test-key'},fetchImpl:async()=>({ok:false,json:async()=>({message:'Denied'})})});
+await assert.rejects(denied.supabaseSignIn('0109876543','123456'),/Denied/);
+const replies=[{access_token:'real-token',user:{id:'uid',email:'user@test.invalid'}},[{tenant_id:'real-tenant',role:'OWNER'}]];
+const valid=load('src/utils/supabaseAuth.ts',{env:{VITE_SUPABASE_URL:'https://test.supabase.co',VITE_SUPABASE_ANON_KEY:'test-key'},fetchImpl:async()=>({ok:true,json:async()=>replies.shift()})});
+assert.equal((await valid.supabaseSignIn('user@test.invalid','secret')).token,'real-token');
+assert.equal(load('src/utils/api.ts').apiUrl('/api/advisor/chat'),'/api/advisor/chat');
+assert.equal(load('src/utils/api.ts',{env:{VITE_API_BASE_URL:'https://api.test.invalid/'}}).apiUrl('/api/advisor/chat'),'https://api.test.invalid/api/advisor/chat');
+const states=[];const hooks=load('src/hooks/useSmartTax.ts',{states});
+const state=hooks.useSmartTax();
+await state.handleRealInvoiceUpload(new File(['<broken>'],'invoice.xml'));
+assert.equal(states.includes('SUCCESS'),false);
+assert.equal(states.some(x=>typeof x==='function'),false);
+assert.throws(()=>state.loginWithCredentials('t-001','SME'),/Verified access token/);
+state.handleRunAutopilotSimulation();
+assert.equal(states.includes('COMPLETED'),false);
+assert.equal(states.includes('ACCEPTED'),false);
+console.log('Frontend security/integrity assertions: 11 passed');

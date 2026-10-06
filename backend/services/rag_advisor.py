@@ -45,7 +45,7 @@ def generate_text_embedding(text: str) -> List[float]:
             )
             return response.data[0].embedding
         except Exception as e:
-            logger.warning(f"Lỗi gọi OpenAI Embedding: {str(e)}")
+            logger.warning("Provider operation failed")
 
     # 2. Thử sinh bằng Gemini/Google Generative AI
     if settings.GEMINI_API_KEY and "your-" not in settings.GEMINI_API_KEY:
@@ -63,20 +63,9 @@ def generate_text_embedding(text: str) -> List[float]:
                 return emb + [0.0] * 768
             return emb[:1536]
         except Exception as e:
-            logger.warning(f"Lỗi gọi Gemini Embedding: {str(e)}")
+            logger.warning("Provider operation failed")
 
-    # 3. Fallback: Sinh vector giả lập 1536 chiều bằng thuật toán MD5 băm chuỗi (Deterministic Mock Vector)
-    logger.info("Chưa có API Key. Hệ thống sử dụng sinh Vector giả lập 1536 chiều.")
-    vector = []
-    text_bytes = text.encode('utf-8')
-    for i in range(1536):
-        # Tạo salt động cho mỗi chiều
-        salt = f"dim-{i}-salt".encode('utf-8')
-        h = hashlib.md5(text_bytes + salt).hexdigest()
-        # Chuyển hash hex sang float thuộc khoảng [-1.0, 1.0]
-        val = (int(h[:8], 16) / 4294967295.0) * 2.0 - 1.0
-        vector.append(val)
-    return vector
+    raise RuntimeError("Verified embedding provider unavailable")
 
 def search_semantic_knowledge(query_emb: List[float], threshold: float = 0.3, limit: int = 3) -> List[Dict[str, Any]]:
     """
@@ -105,10 +94,10 @@ def search_semantic_knowledge(query_emb: List[float], threshold: float = 0.3, li
                     for chunk in response.data
                 ]
     except Exception as e:
-        logger.warning(f"CSDL ngoại tuyến hoặc lỗi truy vấn pgvector: {str(e)}. Sử dụng Local Knowledge Match.")
+        logger.warning("Provider operation failed")
 
     # Fallback đối sánh từ khóa cục bộ đơn giản làm mô phỏng
-    return LOCAL_KNOWLEDGE[:limit]
+    raise RuntimeError("Verified knowledge retrieval unavailable")
 
 def ask_llm_advisor(question: str, context: str) -> Dict[str, str]:
     """
@@ -144,7 +133,7 @@ TRẢ LỜI:"""
                 "citation": "Phân tích RAG ngữ nghĩa sâu (GPT-4o API)"
             }
         except Exception as e:
-            logger.warning(f"Lỗi gọi OpenAI Chat GPT-4o: {str(e)}")
+            logger.warning("Provider operation failed")
 
     # 2. Thử gọi Gemini API (Sử dụng thư viện google-generativeai)
     if settings.GEMINI_API_KEY and "your-" not in settings.GEMINI_API_KEY:
@@ -158,33 +147,9 @@ TRẢ LỜI:"""
                 "citation": "Phân tích RAG ngữ nghĩa sâu (Gemini 1.5 Flash API)"
             }
         except Exception as e:
-            logger.warning(f"Lỗi gọi Gemini 1.5 Flash API: {str(e)}")
+            logger.warning("Provider operation failed")
 
-    # 3. Fallback cục bộ nếu không cấu hình khóa API (đọc từ mock)
-    # Lấy tiêu đề tài liệu làm nguồn trích dẫn
-    q_lower = question.lower()
-    citation = "Hệ thống tri thức luật số e-GDT"
-    answer = "💡 **Hệ thống chuyên gia AI (Chế độ chạy thử offline)**:\n\n"
-    
-    if "thuế" in q_lower or "hạn" in q_lower:
-        answer += LOCAL_KNOWLEDGE[0]["content"]
-        citation = LOCAL_KNOWLEDGE[0]["title"]
-    elif "lương" in q_lower or "phụ cấp" in q_lower:
-        answer += LOCAL_KNOWLEDGE[1]["content"]
-        citation = LOCAL_KNOWLEDGE[1]["title"]
-    elif "hạch toán" in q_lower or "6422" in q_lower:
-        answer += LOCAL_KNOWLEDGE[2]["content"]
-        citation = LOCAL_KNOWLEDGE[2]["title"]
-    elif "liên kết" in q_lower or "lãi vay" in q_lower:
-        answer += LOCAL_KNOWLEDGE[3]["content"]
-        citation = LOCAL_KNOWLEDGE[3]["title"]
-    else:
-        answer += "Tôi đã ghi nhận câu hỏi. Để nhận được tư vấn thuế chính xác nhất từ mô hình ngôn ngữ lớn (Gemini/OpenAI), xin vui lòng cấu hình API Key tương ứng trong tệp `.env` của backend."
-        
-    return {
-        "answer": answer,
-        "citation": citation
-    }
+    raise RuntimeError("Verified advisor provider unavailable")
 
 def index_document_source(source_id: str, title: str, text_content: str) -> int:
     """
@@ -222,10 +187,12 @@ def index_document_source(source_id: str, title: str, text_content: str) -> int:
             
             # Chèn nhiều hàng đồng thời để tối ưu hiệu năng
             response = supabase.table("knowledge_chunks").insert(rows).execute()
-            inserted_count = len(response.data) if response.data else len(rows)
+            inserted_count = len(response.data) if response.data else 0
+            if inserted_count != len(rows):
+                raise RuntimeError("Index persistence not verified")
             logger.info(f"Đã index thành công {inserted_count} chunks vào database.")
             return inserted_count
     except Exception as e:
-        logger.error(f"Lỗi đẩy dữ liệu index vào pgvector DB: {str(e)}")
+        logger.error("Provider operation failed")
         
-    return len(chunks) # Trả về số lượng mảnh ước tính nếu CSDL offline
+    raise RuntimeError("Indexing did not persist verified chunks")

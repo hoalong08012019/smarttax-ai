@@ -4,6 +4,8 @@ from typing import List, Dict, Any, Optional
 import uvicorn
 import shutil
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 from services.xml_parser import parse_vietnam_invoice_xml, parse_invoices_zip
 from services.bank_parser import parse_bank_excel, parse_bank_csv
@@ -11,7 +13,7 @@ from services.telegram_notify import send_telegram_alert, format_autopilot_teleg
 from services.blacklist_scanner import scan_tax_code
 from services.xml_generator import XMLHTKKGenerator
 from services.rag_advisor import generate_text_embedding, search_semantic_knowledge, ask_llm_advisor, index_document_source
-from auth.supabase_jwt import get_current_tenant_id
+from auth.supabase_jwt import get_current_tenant_id, require_admin
 from config import settings
 
 app = FastAPI(
@@ -23,7 +25,7 @@ app = FastAPI(
 # Cấu hình CORS để Frontend React kết nối an toàn
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Trong sản xuất, cấu hình cụ thể tên miền Frontend
+    allow_origins=[origin.strip() for origin in settings.CORS_ORIGINS.split(",") if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,8 +35,7 @@ app.add_middleware(
 def read_root():
     return {
         "status": "ONLINE",
-        "service": "SmartTax AI SaaS MVP Backend",
-        "regime_regulations": ["TT133/2016", "TT88/2021", "NĐ123/2020", "TT111/2013"]
+        "service": "SmartTax AI SaaS MVP Backend"
     }
 
 @app.post("/api/invoices/upload-zip")
@@ -46,8 +47,10 @@ async def upload_invoices(
     Endpoint tiếp nhận file Zip chứa nhiều hóa đơn XML của Tổng cục Thuế hoặc file XML đơn lẻ.
     Tự động rà soát đối chiếu mã số thuế người bán với danh sách đen (Blacklist GDT).
     """
-    content = await file.read()
-    filename = file.filename.lower()
+    content = await file.read(10 * 1024 * 1024 + 1)
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Upload exceeds size limit")
+    filename = (file.filename or "").lower()
     
     try:
         if filename.endswith('.zip'):
@@ -76,8 +79,10 @@ async def upload_invoices(
             }
         else:
             raise HTTPException(status_code=400, detail="Chỉ hỗ trợ tải lên file định dạng .zip hoặc .xml")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi phân tích hóa đơn: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid invoice file")
 
 
 @app.post("/api/bank/upload-statement")
@@ -88,8 +93,10 @@ async def upload_bank_statement(
     """
     Endpoint tiếp nhận tệp Excel (.xlsx) hoặc CSV sao kê tài khoản ngân hàng xuất từ Internet Banking.
     """
-    content = await file.read()
-    filename = file.filename.lower()
+    content = await file.read(10 * 1024 * 1024 + 1)
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail="Upload exceeds size limit")
+    filename = (file.filename or "").lower()
     
     try:
         if filename.endswith('.xlsx'):
@@ -104,8 +111,10 @@ async def upload_bank_statement(
             "message": f"Đã đọc thành công {len(transactions)} giao dịch phát sinh từ tệp sao kê.",
             "transactions": transactions
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi đọc sao kê ngân hàng: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid bank statement")
 
 
 @app.post("/api/autopilot/run")
@@ -123,33 +132,7 @@ async def run_autopilot(
     Kích hoạt tiến trình Kê khai tự trị Autopilot.
     AI sẽ hạch toán ngầm và tự động gửi thông báo báo cáo hoàn tất qua Telegram Bot.
     """
-    # 1. Tính toán số liệu thuế ước tính mẫu cho doanh nghiệp
-    # Thử lấy các tham số để sinh số liệu giả lập thực tế
-    summary_data = {
-        "payable_vat": 2500000.0,
-        "payable_cit": 18500000.0 if accounting_regime == "TT133" else 370000.0
-    }
-    
-    # 2. Sử dụng cấu hình Telegram gửi kèm từ Frontend hoặc mặc định từ File cấu hình
-    bot_token = telegram_token or settings.TELEGRAM_BOT_TOKEN
-    chat_id = telegram_chat_id or settings.TELEGRAM_CHAT_ID
-    
-    # 3. Đẩy tác vụ gửi thông báo xuống Background Worker (tránh nghẽn client)
-    if bot_token and chat_id:
-        tg_message = format_autopilot_telegram_message(
-            company_name=company_name,
-            tax_code=tax_code,
-            period=period,
-            summary=summary_data
-        )
-        background_tasks.add_task(send_telegram_alert, bot_token, chat_id, tg_message)
-        
-    return {
-        "success": True,
-        "status": "RUNNING_BACKGROUND",
-        "message": "Chu kỳ Autopilot tự trị đã được kích hoạt chạy ngầm. Hệ thống sẽ tự động đối soát và gửi thông báo kết quả báo cáo qua Telegram Bot.",
-        "estimated_tax": summary_data
-    }
+    raise HTTPException(status_code=503, detail="Verified autopilot executor not configured")
 
 
 @app.post("/api/advisor/chat")
@@ -180,15 +163,19 @@ async def advisor_chat(
             "citation": res["citation"]
         }
     except Exception as e:
-        logger.error(f"Lỗi hệ thống RAG Chat: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống hỏi đáp: {str(e)}")
+        logger.error("Advisor execution failed")
+        raise HTTPException(status_code=500, detail="Advisor service unavailable")
+
+@app.get("/api/admin/session")
+def admin_session(tenant_id: str = Depends(require_admin)):
+    return {"authenticated": True}
 
 @app.post("/api/admin/index-source")
 async def index_knowledge_source(
     source_id: str = Form(...),
     title: str = Form(...),
     content: str = Form(...),
-    tenant_id: str = Depends(get_current_tenant_id)
+    tenant_id: str = Depends(require_admin)
 ):
     """
     Endpoint nạp văn bản luật mới, tự động băm nhỏ, sinh embeddings và lưu vào pgvector DB.
@@ -200,7 +187,7 @@ async def index_knowledge_source(
             "message": f"Tài liệu đã được băm nhỏ thành công thành {chunks_count} mảnh tri thức và lập chỉ mục vào pgvector DB."
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi lập chỉ mục tài liệu: {str(e)}")
+        raise HTTPException(status_code=500, detail="Indexing service unavailable")
 
 @app.post("/api/reporting/generate-xml")
 async def generate_xml_report(
@@ -239,7 +226,7 @@ async def generate_xml_report(
             }
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi kết xuất tờ khai XML: {str(e)}")
+        raise HTTPException(status_code=500, detail="Report generation failed")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

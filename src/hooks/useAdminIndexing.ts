@@ -1,3 +1,4 @@
+import { apiUrl } from '../utils/api';
 import { useState } from 'react';
 
 export const useAdminIndexing = () => {
@@ -29,7 +30,7 @@ export const useAdminIndexing = () => {
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('http://127.0.0.1:8000/api/admin/index-source', {
+      const res = await fetch(apiUrl('/api/admin/index-source'), {
         method: 'POST',
         headers,
         body: formData
@@ -42,10 +43,8 @@ export const useAdminIndexing = () => {
         throw new Error('Indexing failed');
       }
     } catch (err) {
-      console.warn("Backend offline, falling back to mock indexing...", err);
-      setTimeout(() => {
-        setAdminIndexingStatus('SUCCESS');
-      }, 1200);
+      console.warn('Indexing request failed', err);
+      setAdminIndexingStatus('ERROR');
     }
   };
 

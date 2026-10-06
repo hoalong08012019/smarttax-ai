@@ -1,88 +1,44 @@
-import jwt
-import logging
-from fastapi import Header, HTTPException, Depends
+"""Verify identity with Supabase Auth, then resolve tenant under the user's RLS."""
 from typing import Optional
+import requests
+from fastapi import Header, HTTPException
 from config import settings
 
-logger = logging.getLogger(__name__)
-
-# CSDL cục bộ giả lập để ánh xạ nhanh User ID sang Tenant ID khi chạy offline
-MOCK_USER_TENANT_MAP = {
-    "u-sme-001": "t-001",
-    "u-hkd-002": "t-002"
-}
-
-def get_current_tenant_id(
-    authorization: Optional[str] = Header(None),
-    x_test_tenant: Optional[str] = Header(None)
-) -> str:
-    """
-    FastAPI Dependency: Trích xuất và xác thực token JWT của Supabase Auth từ HTTP Header.
-    Từ đó, tìm kiếm tenant_id (mã định danh doanh nghiệp) tương ứng của người dùng.
-    Hỗ trợ chế độ chạy thử nghiệm offline (Fallback).
-    """
-    # 1. Kiểm tra header chạy thử nghiệm thủ công (ưu tiên khi chạy offline)
-    if x_test_tenant:
-        logger.info(f"Auth: Sử dụng Test Tenant ID từ Header: {x_test_tenant}")
-        return x_test_tenant
-
-    if not authorization:
-        # Nếu hoàn toàn không có header xác thực và đang chạy offline, mặc định trả về t-001 (SME)
-        logger.warning("Auth: Không tìm thấy Authorization Header. Mặc định trả về tenant 't-001' (Chế độ demo offline).")
-        return "t-001"
-
-    token = ""
+def _profile(authorization: Optional[str]):
+    if not authorization or not authorization.startswith("Bearer ") or not authorization[7:].strip():
+        raise HTTPException(status_code=401, detail="Bearer authentication required")
+    base = settings.SUPABASE_URL.rstrip("/")
+    key = settings.SUPABASE_KEY
+    if not base.startswith("https://") or not key or key == "your-supabase-anon-key":
+        raise HTTPException(status_code=503, detail="Authentication service not configured")
+    headers = {"apikey": key, "Authorization": authorization}
     try:
-        # Tách chuỗi Bearer <token>
-        if authorization.startswith("Bearer "):
-            token = authorization.split(" ")[1]
-        else:
-            token = authorization
-    except Exception:
-        logger.warning("Auth: Định dạng Authorization Header sai. Mặc định trả về tenant 't-001'.")
-        return "t-001"
+        identity = requests.get(base + "/auth/v1/user", headers=headers, timeout=10)
+        if identity.status_code in (401,403):
+            raise HTTPException(status_code=401, detail="Invalid or expired access token")
+        if identity.status_code != 200:
+            raise HTTPException(status_code=503, detail="Authentication service unavailable")
+        user = identity.json()
+        if not isinstance(user,dict) or not isinstance(user.get("id"),str) or not user["id"]:
+            raise HTTPException(status_code=401, detail="Invalid identity")
+        profile = requests.get(base + "/rest/v1/users", headers=headers,
+            params={"id": "eq." + user["id"], "select":"tenant_id,role"}, timeout=10)
+        if profile.status_code != 200:
+            raise HTTPException(status_code=503, detail="Tenant lookup unavailable")
+        rows = profile.json()
+        if not isinstance(rows,list) or len(rows)!=1 or not isinstance(rows[0],dict) or not rows[0].get("tenant_id"):
+            raise HTTPException(status_code=403, detail="No authorized tenant")
+        return rows[0]
+    except (requests.RequestException, ValueError):
+        raise HTTPException(status_code=503, detail="Authentication service unavailable")
 
-    # 2. Thử giải mã chữ ký JWT thực tế bằng Supabase JWT Secret
-    try:
-        # Khóa bí mật dùng để xác thực chữ ký Supabase JWT
-        # Nếu người dùng chưa cấu hình SECRET_KEY thật, ta sẽ bắt lỗi và sang fallback
-        jwt_secret = settings.SECRET_KEY
-        if not jwt_secret or jwt_secret == "super-secret-key-smarttax-2026":
-            raise jwt.InvalidSignatureError("Chưa cấu hình Supabase JWT Secret thật.")
-            
-        payload = jwt.decode(
-            token, 
-            jwt_secret, 
-            algorithms=["HS256"], 
-            options={"verify_aud": True},
-            audience="authenticated"
-        )
-        user_uuid = payload.get("sub")
-        if not user_uuid:
-            raise HTTPException(status_code=401, detail="Token không chứa mã định danh người dùng sub.")
+def get_current_tenant_id(authorization: Optional[str] = Header(None),
+                          x_test_tenant: Optional[str] = Header(None)) -> str:
+    # Never trust client-supplied tenant hints, demo tokens, or anonymous fallback.
+    return str(_profile(authorization)["tenant_id"])
 
-        # Truy vấn Supabase DB tìm tenant_id
-        from supabase import create_client, Client
-        if settings.SUPABASE_URL and settings.SUPABASE_KEY and "your-project" not in settings.SUPABASE_URL:
-            supabase: Client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-            res = supabase.table("users").select("tenant_id").eq("id", user_uuid).execute()
-            if res.data and len(res.data) > 0:
-                tenant_id = res.data[0]["tenant_id"]
-                logger.info(f"Auth: Đăng nhập thực tế thành công. User={user_uuid} -> Tenant={tenant_id}")
-                return str(tenant_id)
-
-        # Fallback đối chiếu với bảng mock nếu Supabase URL rỗng
-        if user_uuid in MOCK_USER_TENANT_MAP:
-            return MOCK_USER_TENANT_MAP[user_uuid]
-            
-        # Nếu giải mã thành công nhưng không có tenant liên kết, mặc định trả về t-001
-        return "t-001"
-
-    except Exception as e:
-        logger.warning(f"Auth: Xác thực JWT thất bại ({str(e)}). Chuyển sang chế độ xác thực cục bộ (Offline).")
-        
-        # Mô phỏng: Nếu token khớp với User ID chạy thử, trả về Tenant tương ứng
-        if token in MOCK_USER_TENANT_MAP:
-            return MOCK_USER_TENANT_MAP[token]
-            
-        return "t-001"
+def require_admin(authorization: Optional[str] = Header(None)) -> str:
+    profile = _profile(authorization)
+    if profile.get("role") not in ("ADMIN","SUPER_ADMIN"):
+        raise HTTPException(status_code=403, detail="Administrator permission required")
+    return str(profile["tenant_id"])

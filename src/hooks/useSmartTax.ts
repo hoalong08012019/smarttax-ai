@@ -1,3 +1,4 @@
+import { apiUrl } from '../utils/api';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { supabaseSignOut } from '../utils/supabaseAuth';
 import { 
@@ -412,11 +413,12 @@ export const useSmartTax = () => {
   }, [activeTenantId]);
 
   const loginWithCredentials = useCallback((tenantId: string, role: 'SME' | 'HOUSEHOLD', token?: string) => {
+    if (!token || token.startsWith('u-')) throw new Error('Verified access token required');
     const sessionData = {
       authenticated: true,
       tenantId,
       userType: role,
-      token: token || (role === 'SME' ? 'u-sme-001' : 'u-hkd-002'),
+      token,
       expiresAt: Date.now() + 60 * 60 * 1000 // 1 hour
     };
     sessionStorage.setItem('smarttax_user_auth', JSON.stringify(sessionData));
@@ -663,7 +665,7 @@ export const useSmartTax = () => {
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('http://127.0.0.1:8000/api/invoices/upload-zip', {
+      const res = await fetch(apiUrl('/api/invoices/upload-zip'), {
         method: 'POST',
         headers,
         body: formData
@@ -717,61 +719,10 @@ export const useSmartTax = () => {
         throw new Error('No invoices parsed');
       }
     } catch (err) {
-      console.warn("Backend offline, falling back to mock invoice upload...", err);
-      setTimeout(() => {
-        const amount = file.name.includes('BAN_RA') ? 120000000 : 4500000;
-        const type = file.name.includes('BAN_RA') ? 'OUTGOING' : 'INCOMING';
-        const parsed: Partial<Invoice> = {
-          symbol: type === 'INCOMING' ? '1C26TMM' : '1C26TNN',
-          number: `0000${Math.floor(5000 + Math.random() * 4999)}`,
-          counterpartName: type === 'INCOMING' ? 'Công ty Cổ phần Đầu tư Thiết bị Văn phòng Cao Cấp (Simulation)' : 'Hợp đồng Tư vấn Giải pháp Phần mềm Kế toán (Simulation)',
-          counterpartTaxCode: '0104445556',
-          preTaxAmount: amount,
-          vatRate: '10%',
-          vatAmount: amount * 0.1,
-          totalAmount: amount * 1.1,
-          ocrConfidence: 0.992,
-          type: type,
-          suggestedDebitAcc: tenant.accountingRegime === 'TT133' ? (type === 'INCOMING' ? '242 / 6422' : '131') : 'Sổ chi phí',
-          suggestedCreditAcc: tenant.accountingRegime === 'TT133' ? (type === 'INCOMING' ? '331' : '5111') : 'Doanh thu'
-        };
-        setNewOcrResult(parsed);
-        setOcrParsingStatus('SUCCESS');
-
-        const fullInv: Invoice = {
-          id: `inv-ocr-${Date.now()}`,
-          type: type,
-          symbol: parsed.symbol!,
-          number: parsed.number!,
-          issueDate: new Date().toLocaleDateString('vi-VN'),
-          counterpartTaxCode: parsed.counterpartTaxCode!,
-          counterpartName: parsed.counterpartName!,
-          preTaxAmount: parsed.preTaxAmount!,
-          vatRate: parsed.vatRate!,
-          vatAmount: parsed.vatAmount!,
-          totalAmount: parsed.totalAmount!,
-          ocrConfidence: parsed.ocrConfidence!,
-          riskStatus: 'SAFE',
-          riskFlags: [],
-          suggestedDebitAcc: parsed.suggestedDebitAcc!,
-          suggestedCreditAcc: parsed.suggestedCreditAcc!
-        };
-
-        setLocalInvoices(prev => ({ ...prev, [activeTenantId]: [fullInv, ...(prev[activeTenantId] || [])] }));
-
-        const autoJe: JournalEntry = {
-          id: `je-ocr-${Date.now()}`,
-          date: fullInv.issueDate,
-          voucherCode: `OCR-${fullInv.number}`,
-          description: `Hạch toán hóa đơn điện tử OCR tải lên: ${fullInv.counterpartName} (Simulation)`,
-          debitAccount: fullInv.suggestedDebitAcc,
-          creditAccount: fullInv.suggestedCreditAcc,
-          amount: fullInv.totalAmount,
-          isAutomated: true
-        };
-
-        setLocalJournals(prev => ({ ...prev, [activeTenantId]: [autoJe, ...(prev[activeTenantId] || [])] }));
-      }, 1500);
+      console.warn('Invoice upload failed', err);
+      setNewOcrResult(null);
+      setOcrParsingStatus('IDLE');
+      window.alert('Không thể xử lý hóa đơn. Chưa tạo dữ liệu thay thế.');
     }
   };
 
@@ -785,7 +736,7 @@ export const useSmartTax = () => {
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('http://127.0.0.1:8000/api/bank/upload-statement', {
+      const res = await fetch(apiUrl('/api/bank/upload-statement'), {
         method: 'POST',
         headers,
         body: formData
@@ -813,79 +764,16 @@ export const useSmartTax = () => {
         throw new Error('No transactions parsed');
       }
     } catch (err) {
-      console.warn("Backend offline, falling back to mock bank statement...", err);
-      setTimeout(() => {
-        setBankTransactions(
-          tenant.accountingRegime === 'TT133' 
-            ? MOCK_BANK_TRANSACTIONS_TT133 
-            : MOCK_BANK_TRANSACTIONS_TT88
-        );
-        setBankReconStatus('IDLE');
-      }, 1500);
+      console.warn('Bank upload failed', err);
+      setBankTransactions([]);
+      setBankReconStatus('IDLE');
     }
   };
 
-  const handleRunAutopilotSimulation = useCallback(async () => {
-    setAutopilotStatus('RUNNING');
-    setAutopilotLogs([]);
-
-    try {
-      const formData = new FormData();
-      formData.append('tenant_id', activeTenantId);
-      formData.append('company_name', tenant.companyName);
-      formData.append('tax_code', tenant.taxCode);
-      formData.append('accounting_regime', tenant.accountingRegime);
-      formData.append('period', 'Tháng 04/2026');
-      
-      const token = getAuthToken();
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      await fetch('http://127.0.0.1:8000/api/autopilot/run', {
-        method: 'POST',
-        headers,
-        body: formData
-      });
-    } catch (err) {
-      console.warn("Backend offline, skipping Telegram alert dispatch...", err);
-    }
-    
-    const logs = [
-      '[Autopilot Engine] Khởi chạy worker lập lịch tự trị kiểm tra hạn kê khai...',
-      '[Step 1/6] Đang kết nối API Tổng cục Thuế để đồng bộ hóa đơn điện tử... (Thành công)',
-      '[Step 2/6] Chạy AI Bookkeeper đối chiếu và khớp dòng tiền sao kê Techcombank... (Thành công)',
-      '[Step 3/6] Chạy kiểm toán tuân thủ & Tự động xử lý âm quỹ tiền mặt bằng Hợp đồng Vay Cá Nhân... (Thành công)',
-      '[Step 4/6] Đang cơ cấu lại bảng lương tối ưu thuế TNCN theo Thông tư 111... (Thành công)',
-      '[Step 5/6] Kết xuất tệp XML tờ khai GTGT & Ký số từ xa không chạm bằng Cloud HSM... (Thành công)',
-      '[Step 6/6] Đang nộp tờ khai lên cổng TVAN thuế và chờ tiếp nhận... (Thành công)',
-      '[GDT Gateway] Đã tiếp nhận & Chấp nhận tờ khai điện tử. Trạng thái: CHẤP NHẬN TỜ KHAI.',
-      '[Notification Agent] Đang đồng bộ Telegram API gửi thông báo và biên nhận cho chủ doanh nghiệp...',
-      '[Autopilot Engine] Hoàn tất chu kỳ kê khai tự trị! Hệ thống AN TOÀN & TUÂN THỦ.'
-    ];
-
-    let currentLogIndex = 0;
-    
-    const interval = setInterval(() => {
-      if (currentLogIndex < logs.length) {
-        const timePrefix = `[${new Date().toLocaleTimeString('vi-VN')}] `;
-        setAutopilotLogs(prev => [...prev, timePrefix + logs[currentLogIndex]]);
-        currentLogIndex++;
-      } else {
-        clearInterval(interval);
-        
-        handleApplyPayrollOptimization();
-        handleInjectCashLoan();
-        
-        setFilingStatus('ACCEPTED');
-        setFilingStep(4);
-        setGdtReceipt(MOCK_GDT_RECEIPTS[activeTenantId] || MOCK_GDT_RECEIPTS['t-001']);
-        
-        setAutopilotStatus('COMPLETED');
-        setShowZaloNotification(true);
-      }
-    }, 450);
-
-  }, [activeTenantId, getAuthToken, handleApplyPayrollOptimization, handleInjectCashLoan, tenant]);
+  const handleRunAutopilotSimulation = useCallback(() => {
+    setAutopilotStatus('IDLE');
+    setAutopilotLogs(['Autopilot chưa có executor xác thực. Không gửi tờ khai hoặc tạo biên nhận.']);
+  }, []);
 
   return {
     activeTenantId, setActiveTenantId: switchTenant,
