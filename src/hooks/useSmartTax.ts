@@ -77,34 +77,33 @@ export const useSmartTax = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const raw = sessionStorage.getItem('smarttax_user_auth');
-      if (!raw) return false;
-      try {
-        const data = JSON.parse(raw);
-        if (data.authenticated && data.expiresAt > Date.now()) {
-          return true;
-        }
-        sessionStorage.removeItem('smarttax_user_auth');
-      } catch {
-        return false;
+      if (raw) {
+        try {
+          const data = JSON.parse(raw);
+          if (data.authenticated && data.expiresAt > Date.now()) {
+            return true;
+          }
+        } catch {}
       }
     }
-    return false;
+    // PUBLIC ACCESS DEMO BY DEFAULT
+    return true;
   });
 
   const [userType, setUserType] = useState<'SME' | 'HOUSEHOLD' | null>(() => {
     if (typeof window !== 'undefined') {
       const raw = sessionStorage.getItem('smarttax_user_auth');
-      if (!raw) return null;
-      try {
-        const data = JSON.parse(raw);
-        if (data.authenticated && data.expiresAt > Date.now()) {
-          return data.userType;
-        }
-      } catch {
-        return null;
+      if (raw) {
+        try {
+          const data = JSON.parse(raw);
+          if (data.authenticated && data.expiresAt > Date.now()) {
+            return data.userType;
+          }
+        } catch {}
       }
     }
-    return null;
+    // PUBLIC ACCESS DEMO BY DEFAULT
+    return 'SME';
   });
 
   const [activeTenantId, setActiveTenantId] = useState<string>(() => {
